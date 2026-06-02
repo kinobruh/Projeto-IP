@@ -231,7 +231,7 @@ while run_game == True:
                 if event.ui_element == play_button:
                     game_state = GameState.GAME
                     pygame.mixer.music.stop()
-                    pygame.mixer.music.load(MUSICS / "jogo.mp3")
+                    pygame.mixer.music.load(MUSICS / "menu.wav")
                     pygame.mixer.music.set_volume(0.6 * Volume_Musicas * Volume_Geral)
                     pygame.mixer.music.play(-1)
                 elif event.ui_element == exit_button:
