@@ -200,6 +200,11 @@ player_shape = pymunk.Poly.create_box(player_body, (40, 60))
 player_shape.friction = 0.9
 player_shape.elasticity = 0
 space.add(player_body, player_shape)
+
+#tp
+tp_x = 0
+tp_y = 0
+has_tp = False
 #endregion
 
     #region Colisão Chão
@@ -261,6 +266,14 @@ while run_game == True:
                 if No_Chao(player_body):
                     if event.key == pygame.K_w or event.key == pygame.K_SPACE:
                         player_body.velocity = (player_body.velocity.x, -300)
+                if event.key == pygame.K_x:
+                    if has_tp == False:
+                        tp_x = player_body.position.x
+                        tp_y = player_body.position.y
+                        has_tp = True
+                    else:
+                        player_body.position = (tp_x, tp_y)
+                        has_tp = False
         manager.process_events(event)
     #endregion
 
@@ -380,8 +393,3 @@ while run_game == True:
     pygame.display.update()
 
 pygame.quit()
-
-
-
-
-
