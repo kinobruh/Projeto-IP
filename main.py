@@ -31,6 +31,7 @@ import json
 import sys
 from pathlib import Path
 from enum import Enum
+from player import Player
     #endregion
 #endregion
 
@@ -123,7 +124,6 @@ player_idle_sprite = spritesheet.Spritesheet(player_idle_sheet)
 player_idle_animation_list = []
 player_idle_animation_list = player_idle_sprite.get_animation(0, 7, 64, 128, 2.73, (50, 50, 50))
 player_idle_animation_list_saturada = [saturar(frame, 1.5) for frame in player_idle_animation_list]
-frame_idle = 0
 
     #Walking
 player_walking_sheet = pygame.image.load(SPRITES / "Spritesheets" / "walking.png").convert_alpha()
@@ -131,29 +131,27 @@ player_walking_sprite = spritesheet.Spritesheet(player_walking_sheet)
 player_walking_animation_list = []
 player_walking_animation_list = player_walking_sprite.get_animation(0, 2, 64, 128, 2.73, (50, 50, 50))
 player_walking_animation_list_saturada = [saturar(frame, 1.5) for frame in player_walking_animation_list]
-frame_walking = 0
 
 #Shadow Opacity set
 shadow_opacity = 100
 
 #Sprites Falas Tutorial
-
-slash_neutro = pygame.image.load(SPRITES / "slash.png")
+slash_neutro = pygame.image.load(SPRITES / "Dialogue" /  "slash.png")
 slash_neutro = pygame.transform.scale_by(slash_neutro, 2)
 
-slash_side_eye = pygame.image.load(SPRITES / "slash_olhando_pro_lado.png")
+slash_side_eye = pygame.image.load(SPRITES / "Dialogue" / "slash_olhando_pro_lado.png")
 slash_side_eye = pygame.transform.scale_by(slash_side_eye, 2)
 
-slash_bravo = pygame.image.load(SPRITES / "slash_bravo.png")
+slash_bravo = pygame.image.load(SPRITES / "Dialogue" / "slash_bravo.png")
 slash_bravo = pygame.transform.scale_by(slash_bravo, 2)
 
-hack_falando = pygame.image.load(SPRITES / "hack.png")
+hack_falando = pygame.image.load(SPRITES / "Dialogue" / "hack.png")
 hack_falando = pygame.transform.scale_by(hack_falando, 2)
 
-hack_neutra = pygame.image.load(SPRITES / "hack_neutra.png")
+hack_neutra = pygame.image.load(SPRITES / "Dialogue" / "hack_neutra.png")
 hack_neutra = pygame.transform.scale_by(hack_neutra, 2)
 
-fala_tutorial = 0 #Set fala_tutorial 0
+fala_tutorial = 0
 
 #endregion
 
@@ -262,8 +260,6 @@ life_bar_2_3 = pygame.transform.scale_by(life_bar_2_3, 2)
 life_bar_1_3 = pygame.image.load(SPRITES / "life_bar1.png")
 life_bar_1_3 = pygame.transform.scale_by(life_bar_1_3, 2)
 
-life = 3
-
 #Hides
 yes_button.hide()
 no_button.hide()
@@ -290,55 +286,35 @@ pygame.mixer.music.play(-1)
 #endregion
 
 #region Física
-gravidade = 1.1
-velocidade_y = -12
 space = pymunk.Space()
 space.gravity = (0, 900)
 space.damping = 0.9
-virado = False
-has_tp = False
 pausado = False
-
-#Dash
-dashing = False
-dash_t = 0
-dash_duration = 0.15
-dash_inicial = 0
-dash_final = 0
-dash_distance = 200
-traces = []
-
 entrou_na_sala_geral = False
 #endregion
 
 #endregion
 
 #region Player
-player_body = pymunk.Body(1, float('inf'))
-player_body.position = (250, 430)
-player_shape = pymunk.Poly.create_box(player_body, (64 * 1.5, 128 * 2.5))
-player_shape.friction = 0.9
-player_shape.elasticity = 0
-player_rect = player_idle_animation_list[0].get_rect()
-player_rect.topleft = (100, 100)
-space.add(player_body, player_shape)
-idle_cooldown = 0
-walking_cooldown = 0
-virado = True
+animations = {
+    "Idle": player_idle_animation_list_saturada,
+    "Walking": player_walking_animation_list_saturada
+}
+player = Player(space, animations)
+
 tutorial_acabou = False
-was_in_game =  False
+was_in_game = False
+era_2 = False
+era_3 = True
+
 carro_1x = 600
 carro_1y = 200
-
 carro_2x = 400
 carro_2y = 250
-
 carro_3x = 800
 carro_3y = 180
-
 carro_4x = 900
 carro_4y = 220
-
 carro_5x = 300
 carro_5y = 260
 #endregion
@@ -419,7 +395,6 @@ while run_game:
             press_sfx.set_volume(0.35 * Volume_Sons * Volume_Geral)
             press_sfx.play()
             if game_state == GameState.MENU:
-                
                 if event.ui_element == play_button:
                     game_state = GameState.FASE1
                     pygame.mixer.music.stop()
@@ -436,7 +411,7 @@ while run_game:
                     game_state = GameState.MENU
                 elif event.ui_element == back_button and was_in_game:
                     game_state = GameState.FASE1
-                    pausado =  False
+                    pausado = False
             elif game_state == GameState.EXIT:
                 if event.ui_element == yes_button:
                     run_game = False
@@ -453,23 +428,22 @@ while run_game:
                     menu_button.hide()
                 elif event.ui_element == menu_button:
                     game_state = GameState.MENU
-                    was_in_game =  False
+                    was_in_game = False
                     pausado = False
                     continue_button.hide()
                     options2_button.hide()
                     menu_button.hide()
-                    pygame.mixer_music.stop()
+                    pygame.mixer.music.stop()
                     pygame.mixer.music.load(MUSICS / "menu.mp3")
                     Volume_Transicao = 0
-                    has_tp = False
-                    player_body.position = (250, 430)
+                    player.has_tp = False
+                    player.body.position = (250, 430)
                     transicao_opacity = 255
-                    virado = True
+                    player.virado = True
                     fala_tutorial = 0
                     tutorial_acabou = False
                     pygame.mixer.music.set_volume(0.4 * Volume_Transicao * Volume_Geral * Volume_Musicas)
                     pygame.mixer.music.play(-1)
-
 
         elif game_state == GameState.OPTIONS:
             if event.type == pygame.KEYDOWN and was_in_game:
@@ -495,28 +469,27 @@ while run_game:
         elif game_state == GameState.FASE1 or game_state == GameState.SALAGERAL:
             #region Keydowns
             if event.type == pygame.KEYDOWN:
-                if player_body.velocity.y == 0:
+                if player.body.velocity.y == 0:
                     if event.key == pygame.K_w or event.key == pygame.K_SPACE:
-                        player_body.velocity = (player_body.velocity.x, -500)
-                if event.key == pygame.K_x: #TP Teleporte
-                    if has_tp == False:
-                        tp_x = player_body.position.x
-                        tp_y = player_body.position.y
-                        has_tp = True
+                        player.body.velocity = (player.body.velocity.x, -500)
+                if event.key == pygame.K_x:
+                    if not player.has_tp:
+                        player.tp_pos = (player.body.position.x, player.body.position.y)
+                        player.has_tp = True
                     else:
-                        player_body.position = (tp_x, tp_y)
-                        has_tp = False
+                        player.body.position = player.tp_pos
+                        player.has_tp = False
                 if event.key == pygame.K_k:
-                    life -= 1
-                if event.key == pygame.K_c and not dashing:
-                    dashing = True
-                    traces = []
-                    dash_t = 0
-                    dash_inicial = player_body.position.x
-                    if virado:
-                        dash_final = player_body.position.x + dash_distance
+                    player.life -= 1
+                if event.key == pygame.K_c and not player.dashing:
+                    player.dashing = True
+                    player.traces = []
+                    player.dash_t = 0
+                    player.dash_inicial = player.body.position.x
+                    if player.virado:
+                        player.dash_final = player.body.position.x + player.dash_distance
                     else:
-                        dash_final = player_body.position.x - dash_distance
+                        player.dash_final = player.body.position.x - player.dash_distance
                 if event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN and not tutorial_acabou:
                     fala_tutorial += 1
                     click_sfx.set_volume(0.15 * Volume_Sons * Volume_Geral)
@@ -528,7 +501,7 @@ while run_game:
                 elif event.key == pygame.K_e and range_da_porta:
                     game_state = GameState.SALAGERAL
                     entrou_na_sala_geral = True
-                    
+
         manager.process_events(event)
     #endregion
 
@@ -540,13 +513,13 @@ while run_game:
         if Volume_Transicao < 1:
             Volume_Transicao += 0.01
         screen.fill(BG)
-        screen.blit(predios)
+        screen.blit(predios, (0, 0))
         logo_yt += logo_yvel
         if logo_yt > 1:
             logo_yt = 0
         logo_ytt = logo_yt * 2 if logo_yt < 0.5 else 2 - logo_yt * 2
         logo_y = 60 + (80 - 60) * pytweening.easeInOutQuad(logo_ytt)
-        screen.blit(menu_logo, ((LARGURA - menu_logo.get_width()) // 2 , logo_y))
+        screen.blit(menu_logo, ((LARGURA - menu_logo.get_width()) // 2, logo_y))
         manager.draw_ui(screen)
     
         #region show/hide
@@ -586,7 +559,7 @@ while run_game:
     elif game_state == GameState.OPTIONS:
         transicao_opacity = 0
         screen.fill(BG)
-        screen.blit(predios)
+        screen.blit(predios, (0, 0))
         screen.blit(square_ui, ((LARGURA // 2) - (square_ui.get_width() // 2), 145))
         manager.draw_ui(screen)
 
@@ -619,7 +592,7 @@ while run_game:
     elif game_state == GameState.EXIT:
         transicao_opacity = 0
         screen.fill(BG)
-        screen.blit(predios)
+        screen.blit(predios, (0, 0))
         screen.blit(square_ui, ((LARGURA // 2) - (square_ui.get_width() // 2), 225))
         manager.draw_ui(screen)
         screen.blit(medium_button_ui, (yes_x, yes_no_button_y))
@@ -656,42 +629,35 @@ while run_game:
         saturado = True
 
         #region Estados
-        if player_body.velocity.x == 0 and player_body.velocity.y == 0:
-            estado = "Idle"
-        
-        elif player_body.velocity.y == 0 and player_body.velocity.x != 0:
-            estado = "Walking"
+        if player.body.velocity.x == 0 and player.body.velocity.y == 0:
+            player.estado = "Idle"
+        elif player.body.velocity.y == 0 and player.body.velocity.x != 0:
+            player.estado = "Walking"
 
-        
-        if estado == "Idle":
-            if saturado:
-                player = player_idle_animation_list_saturada[frame_idle]
+        if player.estado == "Idle":
+            player.image = player.animations["Idle"][player.frame_idle]
+        elif player.estado == "Walking":
+            player.image = player.animations["Walking"][player.frame_walking]
 
-        elif estado == "Walking":
-            if saturado:
-                player = player_walking_animation_list_saturada[frame_walking]
-
-        if dashing:
-            dash_progress = pytweening.easeOutQuart(dash_t)
-            new_pos_x = dash_inicial + (dash_final - dash_inicial) * dash_progress
-            player_body.position = (new_pos_x, player_body.position.y)
-            player_body.velocity = (0, player_body.velocity.y)
+        if player.dashing:
+            dash_progress = pytweening.easeOutQuart(player.dash_t)
+            new_pos_x = player.dash_inicial + (player.dash_final - player.dash_inicial) * dash_progress
+            player.body.position = (new_pos_x, player.body.position.y)
+            player.body.velocity = (0, player.body.velocity.y)
 
         space.step(1/60)
         keys = pygame.key.get_pressed()
 
-        x = player_body.position.x
-        y = player_body.position.y
-
+        x = player.body.position.x
+        y = player.body.position.y
         x = max(190, min(x, 1230))
         y = max(0, min(y, ALTURA))
-
-        player_body.position = (x, y)
+        player.body.position = (x, y)
 
         screen.fill(BLACK)
 
-        pos_x = player_body.position.x - 110
-        pos_y = player_body.position.y - 235
+        pos_x = player.body.position.x - 110
+        pos_y = player.body.position.y - 235
 
         #Blit da sala
         screen.blit(sala1_surface, (0, 10))
@@ -721,52 +687,52 @@ while run_game:
         if carro_5x < 260:
             carro_5x = 1085
 
-        if dashing:
-            dash_t += time_delta / dash_duration
-            player = pygame.transform.scale(player, (170, 349))
-            traces.append([pos_x, pos_y, 180])
+        if player.dashing:
+            player.dash_t += time_delta / player.dash_duration
+            player.image = pygame.transform.scale(player.image, (170, 349))
+            player.traces.append([pos_x, pos_y, 180])
 
-            for trace in traces:
-                trace_surf = pygame.transform.scale(player, (200, 349))
+            for trace in player.traces:
+                trace_surf = pygame.transform.scale(player.image, (200, 349))
                 trace_surf.fill(('Purple'), special_flags=pygame.BLEND_ADD)
                 trace_surf.set_alpha(trace[2])
-                if not virado:
+                if not player.virado:
                     screen.blit(trace_surf, (trace[0], trace[1]))
                 else:
-                    trace_surf = pygame.transform.flip(trace_surf, virado, False)
+                    trace_surf = pygame.transform.flip(trace_surf, player.virado, False)
                     screen.blit(trace_surf, (trace[0] - 25, trace[1]))
-                trace[2] -= 30 
+                trace[2] -= 30
 
-            traces = [t for t in traces if t[2] > 0]
-            if dash_t >= 1:
-                dash_t = 1
-                dashing = False
-                player = pygame.transform.scale(player, (170, 349))
+            player.traces = [t for t in player.traces if t[2] > 0]
+            if player.dash_t >= 1:
+                player.dash_t = 1
+                player.dashing = False
+                player.image = pygame.transform.scale(player.image, (170, 349))
 
-        if virado:
-            player = pygame.transform.flip(player, virado, False)
+        if player.virado:
+            player.image = pygame.transform.flip(player.image, player.virado, False)
 
-        if tutorial_acabou and player_body.position.x > 1000:
+        if tutorial_acabou and player.body.position.x > 1000:
             screen.blit(E, (1190, 275))
             range_da_porta = True
         else:
             range_da_porta = False
 
         #region Blit do Player Sala 1
-        screen.blit(player, (pos_x, pos_y))
+        screen.blit(player.image, (pos_x, pos_y))
 
         #region Efeitos de filtro
-        purple_overlay = player.copy()
+        purple_overlay = player.image.copy()
         purple_overlay.fill(('Purple'), special_flags=pygame.BLEND_MULT)
         purple_overlay.set_alpha(40)
         screen.blit(purple_overlay, (pos_x, pos_y))
 
-        blue_overlay = player.copy()
+        blue_overlay = player.image.copy()
         blue_overlay.fill(('Blue'), special_flags=pygame.BLENDMODE_BLEND)
         blue_overlay.set_alpha(30)
         screen.blit(blue_overlay, (pos_x, pos_y))
 
-        shadow_overlay = player.copy()
+        shadow_overlay = player.image.copy()
         shadow_overlay.fill((52, 9, 127), special_flags=pygame.BLENDMODE_MOD)
         shadow_overlay.set_alpha(shadow_opacity)
         if 450 <= pos_x <= 510 or 20 <= pos_x <= 100 or 795 <= pos_x <= 865 or 1105 <= pos_x <= 1200:
@@ -778,30 +744,30 @@ while run_game:
         #endregion
 
         #region Animation Cooldowns
-        if idle_cooldown == 10:
-            frame_idle += 1
-            idle_cooldown = 0
-        if frame_idle == 7:
-            frame_idle = 0
+        if player.idle_cooldown == 10:
+            player.frame_idle += 1
+            player.idle_cooldown = 0
+        if player.frame_idle == 7:
+            player.frame_idle = 0
 
-        if walking_cooldown == 20:
-            frame_walking += 1
-            walking_cooldown = 0
-        if frame_walking == 2:
-            frame_walking = 0
-        
+        if player.walking_cooldown == 20:
+            player.frame_walking += 1
+            player.walking_cooldown = 0
+        if player.frame_walking == 2:
+            player.frame_walking = 0
+
         #region Andar A e Andar D
         if keys[pygame.K_d]:
-            player_body.velocity = (520, player_body.velocity.y)
-            virado = True
+            player.body.velocity = (520, player.body.velocity.y)
+            player.virado = True
         if keys[pygame.K_a]:
-            player_body.velocity = (-375, player_body.velocity.y)
-            virado = False
+            player.body.velocity = (-375, player.body.velocity.y)
+            player.virado = False
         else:
-            player_body.velocity = (player_body.velocity.x * 0.7 , player_body.velocity.y)
+            player.body.velocity = (player.body.velocity.x * 0.7, player.body.velocity.y)
 
-        idle_cooldown += 1
-        walking_cooldown += 1
+        player.idle_cooldown += 1
+        player.walking_cooldown += 1
 
         #region Tutorial
         if not tutorial_acabou:
@@ -810,75 +776,74 @@ while run_game:
 
             #region Falas Tutorial
             if fala_tutorial == 0:
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala0, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
-                screen.blit(Tutorial_Fala0_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 582))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala0, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
+                screen.blit(Tutorial_Fala0_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 582))
             elif fala_tutorial == 1:
                 screen.blit(hack_falando, ((LARGURA // 2) - (slash_neutro.get_width() // 2), 520))
-                screen.blit(Hack_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala1, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
+                screen.blit(Hack_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala1, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
                 screen.blit(aperte_enter, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 540, 640))
             elif fala_tutorial == 2:
                 screen.blit(slash_side_eye, ((LARGURA // 2) - (slash_neutro.get_width() // 2), 520))
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala2, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala2, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
                 screen.blit(aperte_enter, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 540, 640))
             elif fala_tutorial == 3:
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala3, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala3, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
             elif fala_tutorial == 4:
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala4, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala4, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
             elif fala_tutorial == 5:
                 screen.blit(slash_bravo, ((LARGURA // 2) - (slash_neutro.get_width() // 2), 520))
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala5, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala5, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
                 screen.blit(aperte_enter, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 540, 640))
             elif fala_tutorial == 6:
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala6, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
-                screen.blit(Tutorial_Fala6_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 582))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala6, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
+                screen.blit(Tutorial_Fala6_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 582))
             elif fala_tutorial == 7:
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala7, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
-                screen.blit(Tutorial_Fala7_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 582))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala7, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
+                screen.blit(Tutorial_Fala7_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 582))
             elif fala_tutorial == 8:
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala8, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
-                screen.blit(Tutorial_Fala8_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 582))
-                screen.blit(Tutorial_Fala8_2, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 604))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala8, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
+                screen.blit(Tutorial_Fala8_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 582))
+                screen.blit(Tutorial_Fala8_2, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 604))
             elif fala_tutorial == 9:
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala9, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
-                screen.blit(Tutorial_Fala9_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 582))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala9, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
+                screen.blit(Tutorial_Fala9_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 582))
             elif fala_tutorial == 10:
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala10, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala10, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
             elif fala_tutorial == 11:
                 screen.blit(hack_neutra, ((LARGURA // 2) - (slash_neutro.get_width() // 2), 520))
-                screen.blit(Hack_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala11, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
+                screen.blit(Hack_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala11, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
                 screen.blit(aperte_enter, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 540, 640))
             elif fala_tutorial == 12:
-                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 530))
-                screen.blit(Tutorial_Fala12, ((LARGURA // 2) - (slash_neutro.get_width() // 2 ) + 150, 560))
+                screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+                screen.blit(Tutorial_Fala12, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
             elif fala_tutorial <= 13:
                 tutorial_acabou = True
-
             #endregion
 
         #region Sistema de Vida
-        if life == 3:
+        if player.life == 3:
             screen.blit(life_bar_3_3, (20, 20))
             era_3 = True
-        elif life == 2:
+        elif player.life == 2:
             if era_3:
                 damage_sfx.set_volume(0.8 * Volume_Sons * Volume_Geral)
                 damage_sfx.play()
                 era_3 = False
             era_2 = True
             screen.blit(life_bar_2_3, (20, 20))
-        elif life == 1:
+        elif player.life == 1:
             if era_2:
                 damage_sfx.set_volume(0.8 * Volume_Sons * Volume_Geral)
                 damage_sfx.play()
@@ -887,7 +852,7 @@ while run_game:
 
         #region Pause
         if pausado:
-            screen.blit(black_overlay)
+            screen.blit(black_overlay, (0, 0))
             screen.blit(square_ui, ((LARGURA // 2) - (square_ui.get_width() // 2), ((ALTURA // 2) - (square_ui.get_height() // 2))))
             continue_button.show()
             options2_button.show()
@@ -907,103 +872,101 @@ while run_game:
 
     elif game_state == GameState.SALAGERAL:
 
-        if entrou_na_sala_geral == True:
+        if entrou_na_sala_geral:
             entrou_na_sala_geral = False
-            player_body.position = (250, 430)
+            player.body.position = (250, 430)
             space.remove(chao_sala1_shape, chao_sala1_body)
             space.add(chao_sala_geral_body, chao_sala_geral_shape)
 
-        if player_body.velocity.x == 0 and player_body.velocity.y == 0:
-            estado = "Idle"
-        
-        elif player_body.velocity.y == 0 and player_body.velocity.x != 0:
-            estado = "Walking"
+        if player.body.velocity.x == 0 and player.body.velocity.y == 0:
+            player.estado = "Idle"
+        elif player.body.velocity.y == 0 and player.body.velocity.x != 0:
+            player.estado = "Walking"
 
-        if estado == "Idle":
-            if saturado:
-                player = player_idle_animation_list_saturada[frame_idle]
+        if player.estado == "Idle":
+            player.image = player.animations["Idle"][player.frame_idle]
+        elif player.estado == "Walking":
+            player.image = player.animations["Walking"][player.frame_walking]
 
-        elif estado == "Walking":
-            if saturado:
-                player = player_walking_animation_list_saturada[frame_walking]
-
-        if dashing:
-            dash_progress = pytweening.easeOutQuart(dash_t)
-            new_pos_x = dash_inicial + (dash_final - dash_inicial) * dash_progress
-            player_body.position = (new_pos_x, player_body.position.y)
-            player_body.velocity = (0, player_body.velocity.y)
+        if player.dashing:
+            dash_progress = pytweening.easeOutQuart(player.dash_t)
+            new_pos_x = player.dash_inicial + (player.dash_final - player.dash_inicial) * dash_progress
+            player.body.position = (new_pos_x, player.body.position.y)
+            player.body.velocity = (0, player.body.velocity.y)
 
         space.step(1/60)
         keys = pygame.key.get_pressed()
 
-        x = player_body.position.x
-        y = player_body.position.y
-
-        player_body.position = (x, y)
-
-        screen.fill(BLACK)
-
-        pos_x = player_body.position.x - 110
-        pos_y = player_body.position.y - 235
+        x = player.body.position.x
+        y = player.body.position.y
+        player.body.position = (x, y)
 
         screen.fill(BG)
 
-        screen.blit(sala_geral, (0, 10))
+        # Câmera centralizada no player
+        camera_x = player.body.position.x - LARGURA // 2
+        camera_x = max(0, min(camera_x, sala_geral.get_width() - LARGURA))
+        if pos_x < 300:
+            pos_x = LARGURA // 2 - 110
+        pos_y = player.body.position.y - 235
 
-        if dashing:
-            dash_t += time_delta / dash_duration
-            player = pygame.transform.scale(player, (170, 349))
-            traces.append([pos_x, pos_y, 180])
+        screen.blit(sala_geral, (-camera_x, 10))
 
-            for trace in traces:
-                trace_surf = pygame.transform.scale(player, (200, 349))
+        if player.dashing:
+            player.dash_t += time_delta / player.dash_duration
+            player.image = pygame.transform.scale(player.image, (170, 349))
+            player.traces.append([pos_x, pos_y, 180])
+
+            for trace in player.traces:
+                trace_surf = pygame.transform.scale(player.image, (200, 349))
                 trace_surf.fill(('Purple'), special_flags=pygame.BLEND_ADD)
                 trace_surf.set_alpha(trace[2])
-                if not virado:
+                if not player.virado:
                     screen.blit(trace_surf, (trace[0], trace[1]))
                 else:
-                    trace_surf = pygame.transform.flip(trace_surf, virado, False)
+                    trace_surf = pygame.transform.flip(trace_surf, player.virado, False)
                     screen.blit(trace_surf, (trace[0] - 25, trace[1]))
-                trace[2] -= 30 
+                trace[2] -= 30
 
-            traces = [t for t in traces if t[2] > 0]
-            if dash_t >= 1:
-                dash_t = 1
-                dashing = False
-                player = pygame.transform.scale(player, (170, 349))
+            player.traces = [t for t in player.traces if t[2] > 0]
+            if player.dash_t >= 1:
+                player.dash_t = 1
+                player.dashing = False
+                player.image = pygame.transform.scale(player.image, (170, 349))
 
-        if virado:
-            player = pygame.transform.flip(player, virado, False)
+        if player.virado:
+            player.image = pygame.transform.flip(player.image, player.virado, False)
 
-        screen.blit(player, (pos_x, pos_y))
+        screen.blit(player.image, (pos_x, pos_y))
 
         #region Animation Cooldowns
-        if idle_cooldown == 10:
-            frame_idle += 1
-            idle_cooldown = 0
-        if frame_idle == 7:
-            frame_idle = 0
+        if player.idle_cooldown == 10:
+            player.frame_idle += 1
+            player.idle_cooldown = 0
+        if player.frame_idle == 7:
+            player.frame_idle = 0
 
-        if walking_cooldown == 20:
-            frame_walking += 1
-            walking_cooldown = 0
-        if frame_walking == 2:
-            frame_walking = 0
-        
+        if player.walking_cooldown == 20:
+            player.frame_walking += 1
+            player.walking_cooldown = 0
+        if player.frame_walking == 2:
+            player.frame_walking = 0
+
         #region Andar A e Andar D
         if keys[pygame.K_d]:
-            player_body.velocity = (520, player_body.velocity.y)
-            virado = True
+            player.body.velocity = (520, player.body.velocity.y)
+            player.virado = True
         if keys[pygame.K_a]:
-            player_body.velocity = (-375, player_body.velocity.y)
-            virado = False
+            player.body.velocity = (-375, player.body.velocity.y)
+            player.virado = False
         else:
-            player_body.velocity = (player_body.velocity.x * 0.7 , player_body.velocity.y)
+            player.body.velocity = (player.body.velocity.x * 0.7, player.body.velocity.y)
 
         chao_sala_geral_body.position = (chao_sala_geral_x, 595)
 
-        idle_cooldown += 1
-        walking_cooldown += 1
+        player.idle_cooldown += 1
+        player.walking_cooldown += 1
+
     pygame.display.update()
 
 pygame.quit()
