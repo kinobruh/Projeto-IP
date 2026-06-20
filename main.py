@@ -159,6 +159,7 @@ fala_tutorial = 0
 
 #region Musics
 menu_music = MUSICS / "menu.mp3"
+missao_music = MUSICS / "missao.mp3"
 #endregion
 
 #region SFX
@@ -166,6 +167,9 @@ hover_sfx = pygame.mixer.Sound(SFX / "hover.mp3")
 press_sfx = pygame.mixer.Sound(SFX / "menu_click.mp3")
 click_sfx = pygame.mixer.Sound(SFX / "click.mp3")
 damage_sfx = pygame.mixer.Sound(SFX / "damage.mp3")
+open_door_sfx = pygame.mixer.Sound(SFX / "open_door.mp3")
+dash_sfx1 = pygame.mixer.Sound(SFX / "dash3.mp3")
+dash_sfx2 = pygame.mixer.Sound(SFX / "dash.mp3")
 #endregion
 
 #endregion
@@ -175,20 +179,23 @@ damage_sfx = pygame.mixer.Sound(SFX / "damage.mp3")
 #endregion
 
 #region GUI
-menu_logo = pygame.image.load(GUI / "menu.png")
+menu_logo = pygame.image.load(GUI / "menu_logo_ui.png")
 menu_logo = pygame.transform.scale_by(menu_logo, 1)
-large_button_ui = pygame.image.load(GUI / "black_large_button.png")
+large_button_ui = pygame.image.load(GUI / "black_large_button_ui.png")
 square_ui = pygame.image.load(GUI / "square_ui.png")
 
-medium_button_ui = pygame.image.load(GUI / "black_medium_button.png")
+medium_button_ui = pygame.image.load(GUI / "black_medium_button_ui.png")
 
 #Black Overlay do pause
 black_overlay = pygame.Surface((LARGURA, ALTURA))
 black_overlay.fill('Black')
 black_overlay.set_alpha(175)
 
-E = pygame.image.load(GUI / "E.png")
+E_gui = pygame.image.load(GUI / "interact_ui.png")
 range_da_porta = False
+range_da_porta2 = False
+todas_chaves = False
+fala_porta = False
 
 #Física da Logo mexendo
 logo_yt = 0
@@ -278,7 +285,7 @@ game_state = GameState.MENU
 
 #Música
 pygame.mixer.music.load(menu_music)
-pygame.mixer.music.set_volume(0.4)
+pygame.mixer.music.set_volume(0.25)
 pygame.mixer.music.play(-1)
 #endregion
 
@@ -291,6 +298,7 @@ space.gravity = (0, 900)
 space.damping = 0.9
 pausado = False
 entrou_na_sala_geral = False
+cutscene1 = True
 #endregion
 
 #endregion
@@ -309,12 +317,16 @@ era_3 = True
 
 carro_1x = 600
 carro_1y = 200
+
 carro_2x = 400
 carro_2y = 250
+
 carro_3x = 800
 carro_3y = 180
+
 carro_4x = 900
 carro_4y = 220
+
 carro_5x = 300
 carro_5y = 260
 #endregion
@@ -334,6 +346,7 @@ chao_sala_geral_body.position = (chao_sala_geral_x, 595)
 chao_sala_geral_shape = pymunk.Segment(chao_sala_geral_body, (0, 0), (2560, 0), 5)
 chao_sala_geral_shape.friction = 1
 chao_sala_geral_shape.elasticity = 0
+chao_sala_geral_body.position = (chao_sala_geral_x, 620)
 
 #region Textos
 back_text = font.render("Voltar", True, "White")
@@ -352,6 +365,7 @@ menu_text = font.render('Menu', False, "White")
 yes_text = font.render("Sim", True, "White")
 no_text = font.render("Nao", True, "White")
 exit_game_text = font.render("Sair do jogo?", True, "White")
+
 aperte_enter = font.render("Aperte ENTER para continuar", False, (100, 100, 100))
 Slash_name = font.render("Slash", False, (235, 52, 116))
 Hack_name = font.render("Hack", False, (235, 52, 116))
@@ -377,6 +391,17 @@ Tutorial_Fala12 = font.render('Boa sorte.', False, "White")
 aperte_enter = pygame.transform.scale_by(aperte_enter, 0.8)
 Slash_name = pygame.transform.scale_by(Slash_name, 1.5)
 Hack_name = pygame.transform.scale_by(Hack_name, 1.5)
+
+timer_cutscene = 300
+timer_cutscene_progress = 300
+timer_porta = 300
+Cutscene_Fala1 = font.render('Aquela deve ser a porta do escritorio do chefe.', False, "White")
+Cutscene_Fala2 = font.render('Vamos checar.', False, "White")
+
+Porta_Fala1 = font.render('Tem 3 leitores aqui.', False, "White")
+Porta_Fala2 = font.render('Parece que voce vai precisar de 3 chaves de acesso', False, "White")
+Porta_Fala2_1 = font.render('pra conseguir abrir a porta.', False, "White")
+Porta_Fala3 = font.render('Vamos checar as outras salas.', False, "White")
 #endregion
 
 #region Loop Start
@@ -399,7 +424,7 @@ while run_game:
                     game_state = GameState.FASE1
                     pygame.mixer.music.stop()
                     pygame.mixer.music.load(MUSICS / "sala 1.mp3")
-                    pygame.mixer.music.set_volume(0.175 * Volume_Musicas * Volume_Geral)
+                    pygame.mixer.music.set_volume(0.1 * Volume_Musicas * Volume_Geral)
                     pygame.mixer.music.play(-1)
                     transicao_opacity = 255
                 elif event.ui_element == exit_button:
@@ -417,7 +442,7 @@ while run_game:
                     run_game = False
                 elif event.ui_element == no_button:
                     game_state = GameState.MENU
-            elif game_state == GameState.FASE1:
+            elif game_state == GameState.FASE1 or game_state ==  GameState.SALAGERAL:
                 if event.ui_element == continue_button:
                     pausado = False
                 elif event.ui_element == options2_button:
@@ -442,7 +467,7 @@ while run_game:
                     player.virado = True
                     fala_tutorial = 0
                     tutorial_acabou = False
-                    pygame.mixer.music.set_volume(0.4 * Volume_Transicao * Volume_Geral * Volume_Musicas)
+                    pygame.mixer.music.set_volume(0.25 * Volume_Transicao * Volume_Geral * Volume_Musicas)
                     pygame.mixer.music.play(-1)
 
         elif game_state == GameState.OPTIONS:
@@ -454,15 +479,15 @@ while run_game:
                 if event.ui_element == geral_bar:
                     Volume_Geral = geral_bar.get_current_value()
                     if not was_in_game:
-                        pygame.mixer.music.set_volume(0.4 * Volume_Musicas * Volume_Geral)
+                        pygame.mixer.music.set_volume(0.25 * Volume_Musicas * Volume_Geral)
                     else:
-                        pygame.mixer.music.set_volume(0.175 * Volume_Musicas * Volume_Geral)
+                        pygame.mixer.music.set_volume(0.1 * Volume_Musicas * Volume_Geral)
                 elif event.ui_element == music_bar:
                     Volume_Musicas = music_bar.get_current_value()
                     if not was_in_game:
-                        pygame.mixer.music.set_volume(0.4 * Volume_Musicas * Volume_Geral)
+                        pygame.mixer.music.set_volume(0.25 * Volume_Musicas * Volume_Geral)
                     else:
-                        pygame.mixer.music.set_volume(0.175 * Volume_Musicas * Volume_Geral)
+                        pygame.mixer.music.set_volume(0.1 * Volume_Musicas * Volume_Geral)
                 elif event.ui_element == sound_bar:
                     Volume_Sons = sound_bar.get_current_value()
 
@@ -482,6 +507,9 @@ while run_game:
                 if event.key == pygame.K_k:
                     player.life -= 1
                 if event.key == pygame.K_c and not player.dashing:
+                    dash_choose = random.choice([dash_sfx1, dash_sfx2])
+                    dash_choose.set_volume(0.1 * Volume_Sons * Volume_Geral)
+                    dash_choose.play()
                     player.dashing = True
                     player.traces = []
                     player.dash_t = 0
@@ -498,9 +526,11 @@ while run_game:
                     pausado = True
                 elif event.key == pygame.K_ESCAPE and pausado:
                     pausado = False
-                elif event.key == pygame.K_e and range_da_porta:
+                if event.key == pygame.K_e and range_da_porta and game_state == GameState.FASE1:
                     game_state = GameState.SALAGERAL
                     entrou_na_sala_geral = True
+                if event.key == pygame.K_e and range_da_porta2 and game_state == GameState.SALAGERAL and not todas_chaves:
+                    fala_porta = True
 
         manager.process_events(event)
     #endregion
@@ -509,7 +539,7 @@ while run_game:
 
     #region GameState Menu
     if game_state == GameState.MENU:
-        pygame.mixer.music.set_volume(Volume_Transicao * 0.4 * Volume_Geral * Volume_Musicas)
+        pygame.mixer.music.set_volume(Volume_Transicao * 0.25 * Volume_Geral * Volume_Musicas)
         if Volume_Transicao < 1:
             Volume_Transicao += 0.01
         screen.fill(BG)
@@ -694,7 +724,7 @@ while run_game:
 
             for trace in player.traces:
                 trace_surf = pygame.transform.scale(player.image, (200, 349))
-                trace_surf.fill(('Purple'), special_flags=pygame.BLEND_ADD)
+                trace_surf.fill(('maroon1'), special_flags=pygame.BLEND_ADD)
                 trace_surf.set_alpha(trace[2])
                 if not player.virado:
                     screen.blit(trace_surf, (trace[0], trace[1]))
@@ -713,7 +743,7 @@ while run_game:
             player.image = pygame.transform.flip(player.image, player.virado, False)
 
         if tutorial_acabou and player.body.position.x > 1000:
-            screen.blit(E, (1190, 275))
+            screen.blit(E_gui, (1190, 275))
             range_da_porta = True
         else:
             range_da_porta = False
@@ -873,10 +903,47 @@ while run_game:
     elif game_state == GameState.SALAGERAL:
 
         if entrou_na_sala_geral:
+            pygame.mixer.music.load(missao_music)
+            pygame.mixer.music.set_volume(0.125 * Volume_Musicas * Volume_Geral)
+            pygame.mixer.music.play(-1)
             entrou_na_sala_geral = False
-            player.body.position = (250, 430)
+            open_door_sfx.set_volume(0.25 * Volume_Sons * Volume_Geral)
+            open_door_sfx.play()
+            player.body.position = (250, 455)
             space.remove(chao_sala1_shape, chao_sala1_body)
             space.add(chao_sala_geral_body, chao_sala_geral_shape)
+            transicao_opacity = 255
+            cutscenex = 0
+
+        pygame.mixer.music.set_volume(0.125 * Volume_Musicas * Volume_Geral)
+
+        while cutscene1:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+            screen.fill('BLACK')
+            screen.blit(sala_geral, (cutscenex, 10))
+            cutscene1_progress = 1 - (timer_cutscene_progress / 300)
+            cutscenex = 0 + (-1280 - 0) * pytweening.easeOutQuart(cutscene1_progress)
+            screen.blit(slash_neutro, ((LARGURA // 2) - (slash_neutro.get_width() // 2), 520))
+            screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+            if timer_cutscene > 150:
+                screen.blit(Cutscene_Fala1, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
+            else:
+                if timer_cutscene == 150:
+                    click_sfx.set_volume(0.15 * Volume_Sons * Volume_Geral)
+                    click_sfx.play()
+                screen.blit(Cutscene_Fala2, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
+            timer_cutscene -= 1
+            transicao_overlay.set_alpha(transicao_opacity)
+            screen.blit(transicao_overlay, (0, 0))
+            transicao_opacity -= 4
+            if timer_cutscene_progress > 0:
+                timer_cutscene_progress -= 2
+            if timer_cutscene <= 0:
+                cutscene1 = False
+            pygame.display.update()
+            clock.tick(60)
 
         if player.body.velocity.x == 0 and player.body.velocity.y == 0:
             player.estado = "Idle"
@@ -899,6 +966,9 @@ while run_game:
 
         x = player.body.position.x
         y = player.body.position.y
+        x = max(220, min(x, 1230 * 2 - 70))
+        y = max(0, min(y, ALTURA))
+        
         player.body.position = (x, y)
 
         screen.fill(BG)
@@ -906,8 +976,7 @@ while run_game:
         # Câmera centralizada no player
         camera_x = player.body.position.x - LARGURA // 2
         camera_x = max(0, min(camera_x, sala_geral.get_width() - LARGURA))
-        if pos_x < 300:
-            pos_x = LARGURA // 2 - 110
+        pos_x = player.body.position.x - camera_x - 110
         pos_y = player.body.position.y - 235
 
         screen.blit(sala_geral, (-camera_x, 10))
@@ -919,7 +988,7 @@ while run_game:
 
             for trace in player.traces:
                 trace_surf = pygame.transform.scale(player.image, (200, 349))
-                trace_surf.fill(('Purple'), special_flags=pygame.BLEND_ADD)
+                trace_surf.fill(('maroon1'), special_flags=pygame.BLEND_ADD)
                 trace_surf.set_alpha(trace[2])
                 if not player.virado:
                     screen.blit(trace_surf, (trace[0], trace[1]))
@@ -938,6 +1007,35 @@ while run_game:
             player.image = pygame.transform.flip(player.image, player.virado, False)
 
         screen.blit(player.image, (pos_x, pos_y))
+
+        if player.body.position.x > 2100:
+            screen.blit(E_gui, (1100, 275))
+            range_da_porta2 = True
+        else:
+            range_da_porta2 = False
+        
+        while fala_porta:
+            timer_porta -= 1
+            screen.blit(slash_neutro, ((LARGURA // 2) - (slash_neutro.get_width() // 2), 520))
+            screen.blit(Slash_name, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 530))
+            if timer_porta > 200:
+                screen.blit(Porta_Fala1, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
+            elif 200 > timer_porta > 100:
+                if timer_porta == 199:
+                    click_sfx.set_volume(0.15 * Volume_Sons * Volume_Geral)
+                    click_sfx.play()
+                screen.blit(Porta_Fala2, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
+                screen.blit(Porta_Fala2_1, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 582))
+            elif 100 > timer_porta > 0:
+                if timer_porta == 99:
+                    click_sfx.set_volume(0.15 * Volume_Sons * Volume_Geral)
+                    click_sfx.play()
+                screen.blit(Porta_Fala3, ((LARGURA // 2) - (slash_neutro.get_width() // 2) + 150, 560))
+            if timer_porta <= 0:
+                fala_porta = False
+                timer_porta = 300
+            pygame.display.update()
+            clock.tick(60)
 
         #region Animation Cooldowns
         if player.idle_cooldown == 10:
@@ -962,10 +1060,22 @@ while run_game:
         else:
             player.body.velocity = (player.body.velocity.x * 0.7, player.body.velocity.y)
 
-        chao_sala_geral_body.position = (chao_sala_geral_x, 595)
-
         player.idle_cooldown += 1
         player.walking_cooldown += 1
+
+        if pausado:
+            screen.blit(black_overlay, (0, 0))
+            screen.blit(square_ui, ((LARGURA // 2) - (square_ui.get_width() // 2), ((ALTURA // 2) - (square_ui.get_height() // 2))))
+            continue_button.show()
+            options2_button.show()
+            menu_button.show()
+            manager.draw_ui(screen)
+            screen.blit(medium_button_ui, ((LARGURA // 2) - (medium_button_width // 2), 260))
+            screen.blit(medium_button_ui, ((LARGURA // 2) - (medium_button_width // 2), 335))
+            screen.blit(medium_button_ui, ((LARGURA // 2) - (medium_button_width // 2), 410))
+            screen.blit(continue_text, ((LARGURA // 2) - (continue_text.get_width() // 2), 260 + 12))
+            screen.blit(options2_text, ((LARGURA // 2) - (options2_text.get_width() // 2), 335 + 12))
+            screen.blit(menu_text, ((LARGURA // 2) - (menu_text.get_width() // 2), 410 + 12))
 
     pygame.display.update()
 
