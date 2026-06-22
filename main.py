@@ -32,6 +32,7 @@ import sys
 from pathlib import Path
 from enum import Enum
 from player import Player
+from enemy import Enemy
     #endregion
 #endregion
 
@@ -52,6 +53,13 @@ def saturar(surface, fator):
             r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)
             result.set_at((x, y), (int(r2*255), int(g2*255), int(b2*255), a))
     return result
+
+def trocar_chao(space, chao_antigo_body, chao_antigo_shape, chao_novo_body, chao_novo_shape):
+    """Remove o chão antigo (se estiver no space) e adiciona o novo (se ainda não estiver)."""
+    if chao_antigo_shape in space.shapes:
+        space.remove(chao_antigo_shape, chao_antigo_body)
+    if chao_novo_shape not in space.shapes:
+        space.add(chao_novo_body, chao_novo_shape)
 
 #endregion
 
@@ -96,6 +104,8 @@ class GameState(Enum):
     OPTIONS = 2
     EXIT = 3
     SALAGERAL = 4
+    SALA3 = 5
+    SALA2 = 6
 #endregion
 
 #region Sprites/Sounds/Maps/GUI
@@ -115,6 +125,15 @@ carro_esquerda = pygame.transform.scale_by(carro_esquerda, 2.25)
 
 sala_geral = pygame.image.load(SPRITES / "sala geral.png")
 sala_geral = pygame.transform.scale_by(sala_geral, 2.73)
+
+sala3 = pygame.image.load(SPRITES / "sala grande.png")
+sala3 = pygame.transform.scale_by(sala3, 2.73)
+
+#Serra (obstáculo Sala 3)
+serra_sprite = pygame.image.load(SPRITES / "serra.png")
+serra_sprite = pygame.transform.scale_by(serra_sprite, 3)
+serra_rotacao = 0
+
 
 #Player
 
@@ -298,7 +317,16 @@ space.gravity = (0, 900)
 space.damping = 0.9
 pausado = False
 entrou_na_sala_geral = False
+entrou_na_sala1 = False
+entrou_na_sala2 = False
+entrou_na_sala3 = False
+range_volta_sala3 = False
+range_volta_sala2 = False
 cutscene1 = True
+checou_porta = False
+range_da_porta_geral_1 = False
+range_da_porta_geral_2 = False
+range_da_porta_geral_3 = False
 #endregion
 
 #endregion
@@ -312,6 +340,7 @@ player = Player(space, animations)
 
 tutorial_acabou = False
 was_in_game = False
+sala_anterior_options = GameState.FASE1  # guarda em qual sala o player estava antes de pausar e abrir Options
 era_2 = False
 era_3 = True
 
@@ -331,6 +360,19 @@ carro_5x = 300
 carro_5y = 260
 #endregion
 
+#region Inimigo Sala 2
+shoot_sfx = pygame.mixer.Sound(SFX / "shoot.mp3")  # ajuste o nome do arquivo se for diferente
+enemy_sprite = pygame.image.load(SPRITES / "enemy.png").convert_alpha()
+enemy_sprite = pygame.transform.scale_by(enemy_sprite, 2)
+inimigo_sala2 = Enemy(
+    x=900,
+    y=455,
+    patrulha_min=700,
+    patrulha_max=1200,
+    sprite=enemy_sprite,
+)
+#endregion
+
 #Chão Fase 1
 chao_sala1_body = pymunk.Body(body_type=pymunk.Body.STATIC)
 chao_sala1_body.position = (0, 595)
@@ -347,6 +389,64 @@ chao_sala_geral_shape = pymunk.Segment(chao_sala_geral_body, (0, 0), (2560, 0), 
 chao_sala_geral_shape.friction = 1
 chao_sala_geral_shape.elasticity = 0
 chao_sala_geral_body.position = (chao_sala_geral_x, 620)
+
+#Chão Sala 3
+chao_sala3_body = pymunk.Body(body_type=pymunk.Body.STATIC)
+chao_sala3_x = 0
+chao_sala3_body.position = (chao_sala3_x, 620)
+chao_sala3_shape = pymunk.Segment(chao_sala3_body, (0, 0), (sala3.get_width(), 0), 5)
+chao_sala3_shape.friction = 1
+chao_sala3_shape.elasticity = 0
+
+#Chão Sala 2
+chao_sala2_body = pymunk.Body(body_type=pymunk.Body.STATIC)
+chao_sala2_x = 0
+chao_sala2_body.position = (chao_sala2_x, 620)
+chao_sala2_shape = pymunk.Segment(chao_sala2_body, (0, 0), (sala3.get_width(), 0), 5)
+chao_sala2_shape.friction = 1
+chao_sala2_shape.elasticity = 0
+
+serras = []
+
+ESPACAMENTO_SERRA = 350      # distância em x entre cada serra vertical
+MARGEM_INICIAL = 600         # não coloca serra logo na entrada da sala
+MARGEM_FINAL_LIVRE = 500     # px finais do mapa sem serra nenhuma
+
+limite_serras_x = sala3.get_width() - MARGEM_FINAL_LIVRE
+
+x_atual = MARGEM_INICIAL
+fase_idx = 0
+fases_base = [0.0, 0.3, 0.6, 0.15, 0.45, 0.75]
+velocidades_base = [0.45, 0.55, 0.4, 0.5, 0.6, 0.35]
+
+while x_atual < limite_serras_x:
+    y_topo = random.randint(80, 150)
+    y_base = random.randint(450, 540)
+    vel = velocidades_base[fase_idx % len(velocidades_base)]
+    fase = fases_base[fase_idx % len(fases_base)]
+    serras.append({
+        "x": x_atual,
+        "y_topo": y_topo,
+        "y_base": y_base,
+        "vel": vel,
+        "fase": fase,
+        "t": fase,
+    })
+    x_atual += ESPACAMENTO_SERRA
+    fase_idx += 1
+ 
+SERRA_TAMANHO = 150 #hitbox serra
+
+serra_horizontal = {
+    "x_min": 1100,
+    "x_max": 1900,
+    "y": 560,
+    "vel": 280,          
+    "direcao": 1,
+    "x": 1100,
+}
+SERRA_HORIZONTAL_TAMANHO = 150
+#endregion
 
 #region Textos
 back_text = font.render("Voltar", True, "White")
@@ -435,17 +535,18 @@ while run_game:
                 if event.ui_element == back_button and not was_in_game:
                     game_state = GameState.MENU
                 elif event.ui_element == back_button and was_in_game:
-                    game_state = GameState.FASE1
+                    game_state = sala_anterior_options
                     pausado = False
             elif game_state == GameState.EXIT:
                 if event.ui_element == yes_button:
                     run_game = False
                 elif event.ui_element == no_button:
                     game_state = GameState.MENU
-            elif game_state == GameState.FASE1 or game_state ==  GameState.SALAGERAL:
+            elif game_state == GameState.FASE1 or game_state == GameState.SALAGERAL or game_state == GameState.SALA3 or game_state == GameState.SALA2:
                 if event.ui_element == continue_button:
                     pausado = False
                 elif event.ui_element == options2_button:
+                    sala_anterior_options = game_state
                     game_state = GameState.OPTIONS
                     was_in_game = True
                     continue_button.hide()
@@ -473,7 +574,7 @@ while run_game:
         elif game_state == GameState.OPTIONS:
             if event.type == pygame.KEYDOWN and was_in_game:
                 if event.key == pygame.K_ESCAPE:
-                    game_state = GameState.FASE1
+                    game_state = sala_anterior_options
                     pausado = False
             if event.type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
                 if event.ui_element == geral_bar:
@@ -491,7 +592,7 @@ while run_game:
                 elif event.ui_element == sound_bar:
                     Volume_Sons = sound_bar.get_current_value()
 
-        elif game_state == GameState.FASE1 or game_state == GameState.SALAGERAL:
+        elif game_state == GameState.FASE1 or game_state == GameState.SALAGERAL or game_state == GameState.SALA3 or game_state == GameState.SALA2:
             #region Keydowns
             if event.type == pygame.KEYDOWN:
                 if player.body.velocity.y == 0:
@@ -529,8 +630,42 @@ while run_game:
                 if event.key == pygame.K_e and range_da_porta and game_state == GameState.FASE1:
                     game_state = GameState.SALAGERAL
                     entrou_na_sala_geral = True
+                    player.virado = True
                 if event.key == pygame.K_e and range_da_porta2 and game_state == GameState.SALAGERAL and not todas_chaves:
                     fala_porta = True
+                    checou_porta = True
+                elif event.key == pygame.K_e and range_da_porta_geral_3 and game_state == GameState.SALAGERAL and not todas_chaves and checou_porta:
+                    game_state = GameState.SALA3
+                    entrou_na_sala3 = True
+                    range_da_porta_geral_3 = False
+                    range_volta_sala3 = False
+                    player.virado = True
+                elif event.key == pygame.K_e and range_da_porta_geral_2 and game_state == GameState.SALAGERAL and not todas_chaves and checou_porta:
+                    game_state = GameState.SALA2
+                    entrou_na_sala2 = True
+                    range_da_porta_geral_2 = False
+                    range_volta_sala2 = False
+                    player.virado = True
+                if event.key == pygame.K_e and range_volta_sala3 and game_state == GameState.SALA3:
+                    game_state = GameState.SALAGERAL
+                    player.body.position = (1900, 455)
+                    trocar_chao(space, chao_sala3_body, chao_sala3_shape, chao_sala_geral_body, chao_sala_geral_shape)
+                    open_door_sfx.set_volume(0.25 * Volume_Sons * Volume_Geral)
+                    open_door_sfx.play()
+                    transicao_opacity = 255
+                    range_volta_sala3 = False
+                    range_da_porta_geral_3 = False
+                    virado = True
+                if event.key == pygame.K_e and range_volta_sala2 and game_state == GameState.SALA2:
+                    game_state = GameState.SALAGERAL
+                    player.body.position = (1300, 455)
+                    trocar_chao(space, chao_sala2_body, chao_sala2_shape, chao_sala_geral_body, chao_sala_geral_shape)
+                    open_door_sfx.set_volume(0.25 * Volume_Sons * Volume_Geral)
+                    open_door_sfx.play()
+                    transicao_opacity = 255
+                    range_volta_sala2 = False
+                    range_da_porta_geral_2 = False
+                    virado = True
 
         manager.process_events(event)
     #endregion
@@ -901,6 +1036,16 @@ while run_game:
             transicao_opacity -= 5
 
     elif game_state == GameState.SALAGERAL:
+        #region show/hide
+        play_button.hide()
+        options_button.hide()
+        credits_button.hide()
+        exit_button.hide()
+        geral_bar.hide()
+        music_bar.hide()
+        sound_bar.hide()
+        back_button.hide()
+        #endregion
 
         if entrou_na_sala_geral:
             pygame.mixer.music.load(missao_music)
@@ -910,11 +1055,10 @@ while run_game:
             open_door_sfx.set_volume(0.25 * Volume_Sons * Volume_Geral)
             open_door_sfx.play()
             player.body.position = (250, 455)
-            space.remove(chao_sala1_shape, chao_sala1_body)
-            space.add(chao_sala_geral_body, chao_sala_geral_shape)
+            trocar_chao(space, chao_sala1_body, chao_sala1_shape, chao_sala_geral_body, chao_sala_geral_shape)
             transicao_opacity = 255
             cutscenex = 0
-
+            
         pygame.mixer.music.set_volume(0.125 * Volume_Musicas * Volume_Geral)
 
         while cutscene1:
@@ -973,7 +1117,7 @@ while run_game:
 
         screen.fill(BG)
 
-        # Câmera centralizada no player
+        #camera centralizada no player
         camera_x = player.body.position.x - LARGURA // 2
         camera_x = max(0, min(camera_x, sala_geral.get_width() - LARGURA))
         pos_x = player.body.position.x - camera_x - 110
@@ -1009,10 +1153,23 @@ while run_game:
         screen.blit(player.image, (pos_x, pos_y))
 
         if player.body.position.x > 2100:
-            screen.blit(E_gui, (1100, 275))
+            screen.blit(E_gui, (1075, 275))
             range_da_porta2 = True
         else:
             range_da_porta2 = False
+
+        if 1700 < player.body.position.x < 2100:
+            range_da_porta_geral_3 = True
+        else:
+            range_da_porta_geral_3 = False
+
+        if 1100 <= player.body.position.x <= 1500:
+            screen.blit(E_gui, (pos_x + 40, 275))
+            range_da_porta_geral_2 = True
+        else:
+            range_da_porta_geral_2 = False
+
+        print(player.body.position.x)
         
         while fala_porta:
             timer_porta -= 1
@@ -1076,6 +1233,357 @@ while run_game:
             screen.blit(continue_text, ((LARGURA // 2) - (continue_text.get_width() // 2), 260 + 12))
             screen.blit(options2_text, ((LARGURA // 2) - (options2_text.get_width() // 2), 335 + 12))
             screen.blit(menu_text, ((LARGURA // 2) - (menu_text.get_width() // 2), 410 + 12))
+
+    elif game_state == GameState.SALA3:
+        #region show/hide
+        play_button.hide()
+        options_button.hide()
+        credits_button.hide()
+        exit_button.hide()
+        geral_bar.hide()
+        music_bar.hide()
+        sound_bar.hide()
+        back_button.hide()
+        #endregion
+
+        if entrou_na_sala3:
+            entrou_na_sala3 = False
+            open_door_sfx.set_volume(0.25 * Volume_Sons * Volume_Geral)
+            open_door_sfx.play()
+            player.body.position = (250, 455)
+            trocar_chao(space, chao_sala_geral_body, chao_sala_geral_shape, chao_sala3_body, chao_sala3_shape)
+            transicao_opacity = 255
+
+        if player.body.velocity.x == 0 and player.body.velocity.y == 0:
+            player.estado = "Idle"
+        elif player.body.velocity.y == 0 and player.body.velocity.x != 0:
+            player.estado = "Walking"
+
+        if player.estado == "Idle":
+            player.image = player.animations["Idle"][player.frame_idle]
+        elif player.estado == "Walking":
+            player.image = player.animations["Walking"][player.frame_walking]
+
+        if player.dashing:
+            dash_progress = pytweening.easeOutQuart(player.dash_t)
+            new_pos_x = player.dash_inicial + (player.dash_final - player.dash_inicial) * dash_progress
+            player.body.position = (new_pos_x, player.body.position.y)
+            player.body.velocity = (0, player.body.velocity.y)
+
+        space.step(1/60)
+        keys = pygame.key.get_pressed()
+
+        #region movimento das serras
+        for serra in serras:
+            serra["t"] += time_delta * serra["vel"]
+            ciclo = serra["t"] % 2.0
+            if ciclo <= 1.0:
+                progresso = pytweening.easeInOutSine(ciclo)
+            else:
+                progresso = pytweening.easeInOutSine(2.0 - ciclo)
+            serra["y"] = serra["y_topo"] + (serra["y_base"] - serra["y_topo"]) * progresso
+        serra_rotacao = (serra_rotacao + 4) % 360
+
+        #serra horizontal
+        serra_horizontal["x"] += serra_horizontal["vel"] * serra_horizontal["direcao"] * time_delta
+        if serra_horizontal["x"] >= serra_horizontal["x_max"]:
+            serra_horizontal["x"] = serra_horizontal["x_max"]
+            serra_horizontal["direcao"] = -1
+        elif serra_horizontal["x"] <= serra_horizontal["x_min"]:
+            serra_horizontal["x"] = serra_horizontal["x_min"]
+            serra_horizontal["direcao"] = 1
+        #endregion
+
+        x = player.body.position.x
+        y = player.body.position.y
+        x = max(190, min(x, sala3.get_width() - 70))
+        y = max(0, min(y, ALTURA))
+        player.body.position = (x, y)
+
+        screen.fill(BG)
+
+        #camera centralizada no player
+        camera_x = player.body.position.x - LARGURA // 2
+        camera_x = max(0, min(camera_x, sala3.get_width() - LARGURA))
+        pos_x = player.body.position.x - camera_x - 110
+        pos_y = player.body.position.y - 235
+
+        screen.blit(sala3, (-camera_x, 10))
+
+        serra_rotacionada = pygame.transform.rotate(serra_sprite, serra_rotacao)
+        for serra in serras:
+            serra_screen_x = serra["x"] - camera_x
+            serra_rect = serra_rotacionada.get_rect(center=(serra_screen_x, serra["y"]))
+            screen.blit(serra_rotacionada, serra_rect)
+
+        serra_h_screen_x = serra_horizontal["x"] - camera_x
+        serra_h_rect = serra_rotacionada.get_rect(center=(serra_h_screen_x, serra_horizontal["y"]))
+        screen.blit(serra_rotacionada, serra_h_rect)
+
+        if player.dashing:
+            player.dash_t += time_delta / player.dash_duration
+            player.image = pygame.transform.scale(player.image, (170, 349))
+            player.traces.append([pos_x, pos_y, 180])
+
+            for trace in player.traces:
+                trace_surf = pygame.transform.scale(player.image, (200, 349))
+                trace_surf.fill(('maroon1'), special_flags=pygame.BLEND_ADD)
+                trace_surf.set_alpha(trace[2])
+                if not player.virado:
+                    screen.blit(trace_surf, (trace[0], trace[1]))
+                else:
+                    trace_surf = pygame.transform.flip(trace_surf, player.virado, False)
+                    screen.blit(trace_surf, (trace[0] - 25, trace[1]))
+                trace[2] -= 30
+
+            player.traces = [t for t in player.traces if t[2] > 0]
+            if player.dash_t >= 1:
+                player.dash_t = 1
+                player.dashing = False
+                player.image = pygame.transform.scale(player.image, (170, 349))
+
+        if player.virado:
+            player.image = pygame.transform.flip(player.image, player.virado, False)
+
+        screen.blit(player.image, (pos_x, pos_y))
+
+        player_hitbox = pygame.Rect(pos_x + 50, pos_y + 60, 70, 200)
+        colidiu = False
+        for serra in serras:
+            serra_screen_x = serra["x"] - camera_x
+            serra_hitbox = pygame.Rect(
+                serra_screen_x - SERRA_TAMANHO // 2,
+                serra["y"] - SERRA_TAMANHO // 2,
+                SERRA_TAMANHO,
+                SERRA_TAMANHO
+            )
+            if player_hitbox.colliderect(serra_hitbox):
+                colidiu = True
+                break
+
+        if not colidiu:
+            serra_h_screen_x = serra_horizontal["x"] - camera_x
+            serra_h_hitbox = pygame.Rect(
+                serra_h_screen_x - SERRA_HORIZONTAL_TAMANHO // 2,
+                serra_horizontal["y"] - SERRA_HORIZONTAL_TAMANHO // 2,
+                SERRA_HORIZONTAL_TAMANHO,
+                SERRA_HORIZONTAL_TAMANHO
+            )
+            if player_hitbox.colliderect(serra_h_hitbox):
+                colidiu = True
+
+        if colidiu:
+            damage_sfx.set_volume(0.8 * Volume_Sons * Volume_Geral)
+            damage_sfx.play()
+            player.body.position = (250, 455)
+            player.body.velocity = (0, 0)
+            player.has_tp = False
+
+        if player.body.position.x < 400:
+            screen.blit(E_gui, (140, 275))
+            range_volta_sala3 = True
+        else:
+            range_volta_sala3 = False
+
+        #region Animation Cooldowns
+        if player.idle_cooldown == 10:
+            player.frame_idle += 1
+            player.idle_cooldown = 0
+        if player.frame_idle == 7:
+            player.frame_idle = 0
+
+        if player.walking_cooldown == 20:
+            player.frame_walking += 1
+            player.walking_cooldown = 0
+        if player.frame_walking == 2:
+            player.frame_walking = 0
+
+        #region Andar A e Andar D
+        if keys[pygame.K_d]:
+            player.body.velocity = (520, player.body.velocity.y)
+            player.virado = True
+        if keys[pygame.K_a]:
+            player.body.velocity = (-375, player.body.velocity.y)
+            player.virado = False
+        else:
+            player.body.velocity = (player.body.velocity.x * 0.7, player.body.velocity.y)
+
+        player.idle_cooldown += 1
+        player.walking_cooldown += 1
+
+        if pausado:
+            screen.blit(black_overlay, (0, 0))
+            screen.blit(square_ui, ((LARGURA // 2) - (square_ui.get_width() // 2), ((ALTURA // 2) - (square_ui.get_height() // 2))))
+            continue_button.show()
+            options2_button.show()
+            menu_button.show()
+            manager.draw_ui(screen)
+            screen.blit(medium_button_ui, ((LARGURA // 2) - (medium_button_width // 2), 260))
+            screen.blit(medium_button_ui, ((LARGURA // 2) - (medium_button_width // 2), 335))
+            screen.blit(medium_button_ui, ((LARGURA // 2) - (medium_button_width // 2), 410))
+            screen.blit(continue_text, ((LARGURA // 2) - (continue_text.get_width() // 2), 260 + 12))
+            screen.blit(options2_text, ((LARGURA // 2) - (options2_text.get_width() // 2), 335 + 12))
+            screen.blit(menu_text, ((LARGURA // 2) - (menu_text.get_width() // 2), 410 + 12))
+
+        transicao_overlay.set_alpha(transicao_opacity)
+        screen.blit(transicao_overlay, (0, 0))
+        if transicao_opacity > 0:
+            transicao_opacity -= 5
+
+    elif game_state == GameState.SALA2:
+         #region show/hide
+        play_button.hide()
+        options_button.hide()
+        credits_button.hide()
+        exit_button.hide()
+        geral_bar.hide()
+        music_bar.hide()
+        sound_bar.hide()
+        back_button.hide()
+        #endregion
+
+        if entrou_na_sala2:
+            entrou_na_sala2 = False
+            open_door_sfx.set_volume(0.25 * Volume_Sons * Volume_Geral)
+            open_door_sfx.play()
+            player.body.position = (250, 455)
+            trocar_chao(space, chao_sala_geral_body, chao_sala_geral_shape, chao_sala2_body, chao_sala2_shape)
+            transicao_opacity = 255
+
+        if player.body.velocity.x == 0 and player.body.velocity.y == 0:
+            player.estado = "Idle"
+        elif player.body.velocity.y == 0 and player.body.velocity.x != 0:
+            player.estado = "Walking"
+
+        if player.estado == "Idle":
+            player.image = player.animations["Idle"][player.frame_idle]
+        elif player.estado == "Walking":
+            player.image = player.animations["Walking"][player.frame_walking]
+
+        if player.dashing:
+            dash_progress = pytweening.easeOutQuart(player.dash_t)
+            new_pos_x = player.dash_inicial + (player.dash_final - player.dash_inicial) * dash_progress
+            player.body.position = (new_pos_x, player.body.position.y)
+            player.body.velocity = (0, player.body.velocity.y)
+
+        space.step(1/60)
+        keys = pygame.key.get_pressed()
+
+        # Atualiza o inimigo da sala 2 (patrulha / mira / dispara)
+        inimigo_sala2.update(
+            time_delta,
+            player.body.position.x,
+            player.body.position.y,
+            sfx_tiro=shoot_sfx,
+            volume_sfx=0.4 * Volume_Sons * Volume_Geral,
+        )
+
+        x = player.body.position.x
+        y = player.body.position.y
+        x = max(190, min(x, sala3.get_width() - 70))
+        y = max(0, min(y, ALTURA))
+        player.body.position = (x, y)
+
+        screen.fill(BG)
+
+        # Câmera centralizada no player
+        camera_x = player.body.position.x - LARGURA // 2
+        camera_x = max(0, min(camera_x, sala3.get_width() - LARGURA))
+        pos_x = player.body.position.x - camera_x - 110
+        pos_y = player.body.position.y - 235
+
+        screen.blit(sala3, (-camera_x, 10))
+
+        if player.dashing:
+            player.dash_t += time_delta / player.dash_duration
+            player.image = pygame.transform.scale(player.image, (170, 349))
+            player.traces.append([pos_x, pos_y, 180])
+
+            for trace in player.traces:
+                trace_surf = pygame.transform.scale(player.image, (200, 349))
+                trace_surf.fill(('maroon1'), special_flags=pygame.BLEND_ADD)
+                trace_surf.set_alpha(trace[2])
+                if not player.virado:
+                    screen.blit(trace_surf, (trace[0], trace[1]))
+                else:
+                    trace_surf = pygame.transform.flip(trace_surf, player.virado, False)
+                    screen.blit(trace_surf, (trace[0] - 25, trace[1]))
+                trace[2] -= 30
+
+            player.traces = [t for t in player.traces if t[2] > 0]
+            if player.dash_t >= 1:
+                player.dash_t = 1
+                player.dashing = False
+                player.image = pygame.transform.scale(player.image, (170, 349))
+
+        if player.virado:
+            player.image = pygame.transform.flip(player.image, player.virado, False)
+
+        screen.blit(player.image, (pos_x, pos_y))
+
+        inimigo_sala2.draw(screen, camera_x)
+
+        #region colisao bala inimigo player
+        player_hitbox = pygame.Rect(pos_x + 50, pos_y + 60, 70, 200)
+        for bullet in inimigo_sala2.bullets:
+            if bullet.vivo and player_hitbox.colliderect(bullet.get_rect(camera_x)):
+                bullet.vivo = False
+                damage_sfx.set_volume(0.8 * Volume_Sons * Volume_Geral)
+                damage_sfx.play()
+                player.life -= 1
+        inimigo_sala2.bullets = [b for b in inimigo_sala2.bullets if b.vivo]
+        #endregion
+
+        if player.body.position.x < 400:
+            screen.blit(E_gui, (140, 275))
+            range_volta_sala2 = True
+        else:
+            range_volta_sala2 = False
+
+        #region Animation Cooldowns
+        if player.idle_cooldown == 10:
+            player.frame_idle += 1
+            player.idle_cooldown = 0
+        if player.frame_idle == 7:
+            player.frame_idle = 0
+
+        if player.walking_cooldown == 20:
+            player.frame_walking += 1
+            player.walking_cooldown = 0
+        if player.frame_walking == 2:
+            player.frame_walking = 0
+
+        #region Andar A e Andar D
+        if keys[pygame.K_d]:
+            player.body.velocity = (520, player.body.velocity.y)
+            player.virado = True
+        if keys[pygame.K_a]:
+            player.body.velocity = (-375, player.body.velocity.y)
+            player.virado = False
+        else:
+            player.body.velocity = (player.body.velocity.x * 0.7, player.body.velocity.y)
+
+        player.idle_cooldown += 1
+        player.walking_cooldown += 1
+
+        if pausado:
+            screen.blit(black_overlay, (0, 0))
+            screen.blit(square_ui, ((LARGURA // 2) - (square_ui.get_width() // 2), ((ALTURA // 2) - (square_ui.get_height() // 2))))
+            continue_button.show()
+            options2_button.show()
+            menu_button.show()
+            manager.draw_ui(screen)
+            screen.blit(medium_button_ui, ((LARGURA // 2) - (medium_button_width // 2), 260))
+            screen.blit(medium_button_ui, ((LARGURA // 2) - (medium_button_width // 2), 335))
+            screen.blit(medium_button_ui, ((LARGURA // 2) - (medium_button_width // 2), 410))
+            screen.blit(continue_text, ((LARGURA // 2) - (continue_text.get_width() // 2), 260 + 12))
+            screen.blit(options2_text, ((LARGURA // 2) - (options2_text.get_width() // 2), 335 + 12))
+            screen.blit(menu_text, ((LARGURA // 2) - (menu_text.get_width() // 2), 410 + 12))
+
+        transicao_overlay.set_alpha(transicao_opacity)
+        screen.blit(transicao_overlay, (0, 0))
+        if transicao_opacity > 0:
+            transicao_opacity -= 5
 
     pygame.display.update()
 
