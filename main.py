@@ -5,6 +5,7 @@
     #region Pygame
 import pygame
 import pygame_gui
+#import pyinstaller
     #endregion
 
     #region Mapa / Câmera
