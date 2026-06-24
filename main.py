@@ -34,6 +34,7 @@ from pathlib import Path
 from enum import Enum
 from player import Player
 from enemy import Enemy
+from sala3 import Sala3
     #endregion
 #endregion
 
@@ -133,7 +134,6 @@ sala3 = pygame.transform.scale_by(sala3, 2.73)
 #Serra (obstáculo Sala 3)
 serra_sprite = pygame.image.load(SPRITES / "serra.png")
 serra_sprite = pygame.transform.scale_by(serra_sprite, 3)
-serra_rotacao = 0
 
 
 #Player
@@ -321,7 +321,6 @@ entrou_na_sala_geral = False
 entrou_na_sala1 = False
 entrou_na_sala2 = False
 entrou_na_sala3 = False
-range_volta_sala3 = False
 range_volta_sala2 = False
 cutscene1 = True
 checou_porta = False
@@ -407,46 +406,8 @@ chao_sala2_shape = pymunk.Segment(chao_sala2_body, (0, 0), (sala3.get_width(), 0
 chao_sala2_shape.friction = 1
 chao_sala2_shape.elasticity = 0
 
-serras = []
+sala3_obj = Sala3(sala3, serra_sprite)
 
-ESPACAMENTO_SERRA = 350      # distância em x entre cada serra vertical
-MARGEM_INICIAL = 600         # não coloca serra logo na entrada da sala
-MARGEM_FINAL_LIVRE = 500     # px finais do mapa sem serra nenhuma
-
-limite_serras_x = sala3.get_width() - MARGEM_FINAL_LIVRE
-
-x_atual = MARGEM_INICIAL
-fase_idx = 0
-fases_base = [0.0, 0.3, 0.6, 0.15, 0.45, 0.75]
-velocidades_base = [0.45, 0.55, 0.4, 0.5, 0.6, 0.35]
-
-while x_atual < limite_serras_x:
-    y_topo = random.randint(80, 150)
-    y_base = random.randint(450, 540)
-    vel = velocidades_base[fase_idx % len(velocidades_base)]
-    fase = fases_base[fase_idx % len(fases_base)]
-    serras.append({
-        "x": x_atual,
-        "y_topo": y_topo,
-        "y_base": y_base,
-        "vel": vel,
-        "fase": fase,
-        "t": fase,
-    })
-    x_atual += ESPACAMENTO_SERRA
-    fase_idx += 1
- 
-SERRA_TAMANHO = 150 #hitbox serra
-
-serra_horizontal = {
-    "x_min": 1100,
-    "x_max": 1900,
-    "y": 560,
-    "vel": 280,          
-    "direcao": 1,
-    "x": 1100,
-}
-SERRA_HORIZONTAL_TAMANHO = 150
 #endregion
 
 #region Textos
@@ -596,30 +557,17 @@ while run_game:
         elif game_state == GameState.FASE1 or game_state == GameState.SALAGERAL or game_state == GameState.SALA3 or game_state == GameState.SALA2:
             #region Keydowns
             if event.type == pygame.KEYDOWN:
-                if player.body.velocity.y == 0:
-                    if event.key == pygame.K_w or event.key == pygame.K_SPACE:
-                        player.body.velocity = (player.body.velocity.x, -500)
+                if event.key == pygame.K_w or event.key == pygame.K_SPACE:
+                        player.pular()
                 if event.key == pygame.K_x:
-                    if not player.has_tp:
-                        player.tp_pos = (player.body.position.x, player.body.position.y)
-                        player.has_tp = True
-                    else:
-                        player.body.position = player.tp_pos
-                        player.has_tp = False
+                    player.usar_teleporte()
                 if event.key == pygame.K_k:
                     player.life -= 1
                 if event.key == pygame.K_c and not player.dashing:
                     dash_choose = random.choice([dash_sfx1, dash_sfx2])
                     dash_choose.set_volume(0.1 * Volume_Sons * Volume_Geral)
                     dash_choose.play()
-                    player.dashing = True
-                    player.traces = []
-                    player.dash_t = 0
-                    player.dash_inicial = player.body.position.x
-                    if player.virado:
-                        player.dash_final = player.body.position.x + player.dash_distance
-                    else:
-                        player.dash_final = player.body.position.x - player.dash_distance
+                    player.iniciar_dash()
                 if event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN and not tutorial_acabou:
                     fala_tutorial += 1
                     click_sfx.set_volume(0.15 * Volume_Sons * Volume_Geral)
@@ -639,7 +587,7 @@ while run_game:
                     game_state = GameState.SALA3
                     entrou_na_sala3 = True
                     range_da_porta_geral_3 = False
-                    range_volta_sala3 = False
+                    sala3_obj.range_volta = False
                     player.virado = True
                 elif event.key == pygame.K_e and range_da_porta_geral_2 and game_state == GameState.SALAGERAL and not todas_chaves and checou_porta:
                     game_state = GameState.SALA2
@@ -647,14 +595,14 @@ while run_game:
                     range_da_porta_geral_2 = False
                     range_volta_sala2 = False
                     player.virado = True
-                if event.key == pygame.K_e and range_volta_sala3 and game_state == GameState.SALA3:
+                if event.key == pygame.K_e and sala3_obj.range_volta and game_state == GameState.SALA3:
                     game_state = GameState.SALAGERAL
                     player.body.position = (1900, 455)
                     trocar_chao(space, chao_sala3_body, chao_sala3_shape, chao_sala_geral_body, chao_sala_geral_shape)
                     open_door_sfx.set_volume(0.25 * Volume_Sons * Volume_Geral)
                     open_door_sfx.play()
                     transicao_opacity = 255
-                    range_volta_sala3 = False
+                    sala3_obj.range_volta = False
                     range_da_porta_geral_3 = False
                     virado = True
                 if event.key == pygame.K_e and range_volta_sala2 and game_state == GameState.SALA2:
@@ -800,10 +748,6 @@ while run_game:
         elif player.body.velocity.y == 0 and player.body.velocity.x != 0:
             player.estado = "Walking"
 
-        if player.estado == "Idle":
-            player.image = player.animations["Idle"][player.frame_idle]
-        elif player.estado == "Walking":
-            player.image = player.animations["Walking"][player.frame_walking]
 
         if player.dashing:
             dash_progress = pytweening.easeOutQuart(player.dash_t)
@@ -909,18 +853,7 @@ while run_game:
             shadow_opacity = 0
         #endregion
 
-        #region Animation Cooldowns
-        if player.idle_cooldown == 10:
-            player.frame_idle += 1
-            player.idle_cooldown = 0
-        if player.frame_idle == 7:
-            player.frame_idle = 0
-
-        if player.walking_cooldown == 20:
-            player.frame_walking += 1
-            player.walking_cooldown = 0
-        if player.frame_walking == 2:
-            player.frame_walking = 0
+        player.atualizar_animacao()
 
         #region Andar A e Andar D
         if keys[pygame.K_d]:
@@ -931,9 +864,6 @@ while run_game:
             player.virado = False
         else:
             player.body.velocity = (player.body.velocity.x * 0.7, player.body.velocity.y)
-
-        player.idle_cooldown += 1
-        player.walking_cooldown += 1
 
         #region Tutorial
         if not tutorial_acabou:
@@ -1095,10 +1025,6 @@ while run_game:
         elif player.body.velocity.y == 0 and player.body.velocity.x != 0:
             player.estado = "Walking"
 
-        if player.estado == "Idle":
-            player.image = player.animations["Idle"][player.frame_idle]
-        elif player.estado == "Walking":
-            player.image = player.animations["Walking"][player.frame_walking]
 
         if player.dashing:
             dash_progress = pytweening.easeOutQuart(player.dash_t)
@@ -1195,18 +1121,7 @@ while run_game:
             pygame.display.update()
             clock.tick(60)
 
-        #region Animation Cooldowns
-        if player.idle_cooldown == 10:
-            player.frame_idle += 1
-            player.idle_cooldown = 0
-        if player.frame_idle == 7:
-            player.frame_idle = 0
-
-        if player.walking_cooldown == 20:
-            player.frame_walking += 1
-            player.walking_cooldown = 0
-        if player.frame_walking == 2:
-            player.frame_walking = 0
+        player.atualizar_animacao()
 
         #region Andar A e Andar D
         if keys[pygame.K_d]:
@@ -1217,9 +1132,6 @@ while run_game:
             player.virado = False
         else:
             player.body.velocity = (player.body.velocity.x * 0.7, player.body.velocity.y)
-
-        player.idle_cooldown += 1
-        player.walking_cooldown += 1
 
         if pausado:
             screen.blit(black_overlay, (0, 0))
@@ -1255,149 +1167,26 @@ while run_game:
             trocar_chao(space, chao_sala_geral_body, chao_sala_geral_shape, chao_sala3_body, chao_sala3_shape)
             transicao_opacity = 255
 
-        if player.body.velocity.x == 0 and player.body.velocity.y == 0:
-            player.estado = "Idle"
-        elif player.body.velocity.y == 0 and player.body.velocity.x != 0:
-            player.estado = "Walking"
-
-        if player.estado == "Idle":
-            player.image = player.animations["Idle"][player.frame_idle]
-        elif player.estado == "Walking":
-            player.image = player.animations["Walking"][player.frame_walking]
-
-        if player.dashing:
-            dash_progress = pytweening.easeOutQuart(player.dash_t)
-            new_pos_x = player.dash_inicial + (player.dash_final - player.dash_inicial) * dash_progress
-            player.body.position = (new_pos_x, player.body.position.y)
-            player.body.velocity = (0, player.body.velocity.y)
-
-        space.step(1/60)
+        sala3_obj.update(time_delta, player, space)
         keys = pygame.key.get_pressed()
 
-        #region movimento das serras
-        for serra in serras:
-            serra["t"] += time_delta * serra["vel"]
-            ciclo = serra["t"] % 2.0
-            if ciclo <= 1.0:
-                progresso = pytweening.easeInOutSine(ciclo)
-            else:
-                progresso = pytweening.easeInOutSine(2.0 - ciclo)
-            serra["y"] = serra["y_topo"] + (serra["y_base"] - serra["y_topo"]) * progresso
-        serra_rotacao = (serra_rotacao + 4) % 360
-
-        #serra horizontal
-        serra_horizontal["x"] += serra_horizontal["vel"] * serra_horizontal["direcao"] * time_delta
-        if serra_horizontal["x"] >= serra_horizontal["x_max"]:
-            serra_horizontal["x"] = serra_horizontal["x_max"]
-            serra_horizontal["direcao"] = -1
-        elif serra_horizontal["x"] <= serra_horizontal["x_min"]:
-            serra_horizontal["x"] = serra_horizontal["x_min"]
-            serra_horizontal["direcao"] = 1
-        #endregion
-
-        x = player.body.position.x
-        y = player.body.position.y
-        x = max(190, min(x, sala3.get_width() - 70))
-        y = max(0, min(y, ALTURA))
-        player.body.position = (x, y)
-
-        screen.fill(BG)
-
-        #camera centralizada no player
-        camera_x = player.body.position.x - LARGURA // 2
-        camera_x = max(0, min(camera_x, sala3.get_width() - LARGURA))
+        camera_x = sala3_obj.calcular_camera(player.body.position.x)
         pos_x = player.body.position.x - camera_x - 110
         pos_y = player.body.position.y - 235
 
-        screen.blit(sala3, (-camera_x, 10))
-
-        serra_rotacionada = pygame.transform.rotate(serra_sprite, serra_rotacao)
-        for serra in serras:
-            serra_screen_x = serra["x"] - camera_x
-            serra_rect = serra_rotacionada.get_rect(center=(serra_screen_x, serra["y"]))
-            screen.blit(serra_rotacionada, serra_rect)
-
-        serra_h_screen_x = serra_horizontal["x"] - camera_x
-        serra_h_rect = serra_rotacionada.get_rect(center=(serra_h_screen_x, serra_horizontal["y"]))
-        screen.blit(serra_rotacionada, serra_h_rect)
-
-        if player.dashing:
-            player.dash_t += time_delta / player.dash_duration
-            player.image = pygame.transform.scale(player.image, (170, 349))
-            player.traces.append([pos_x, pos_y, 180])
-
-            for trace in player.traces:
-                trace_surf = pygame.transform.scale(player.image, (200, 349))
-                trace_surf.fill(('maroon1'), special_flags=pygame.BLEND_ADD)
-                trace_surf.set_alpha(trace[2])
-                if not player.virado:
-                    screen.blit(trace_surf, (trace[0], trace[1]))
-                else:
-                    trace_surf = pygame.transform.flip(trace_surf, player.virado, False)
-                    screen.blit(trace_surf, (trace[0] - 25, trace[1]))
-                trace[2] -= 30
-
-            player.traces = [t for t in player.traces if t[2] > 0]
-            if player.dash_t >= 1:
-                player.dash_t = 1
-                player.dashing = False
-                player.image = pygame.transform.scale(player.image, (170, 349))
-
-        if player.virado:
-            player.image = pygame.transform.flip(player.image, player.virado, False)
-
-        screen.blit(player.image, (pos_x, pos_y))
+        sala3_obj.draw(screen, player, camera_x, pos_x, pos_y, time_delta)
 
         player_hitbox = pygame.Rect(pos_x + 50, pos_y + 60, 70, 200)
-        colidiu = False
-        for serra in serras:
-            serra_screen_x = serra["x"] - camera_x
-            serra_hitbox = pygame.Rect(
-                serra_screen_x - SERRA_TAMANHO // 2,
-                serra["y"] - SERRA_TAMANHO // 2,
-                SERRA_TAMANHO,
-                SERRA_TAMANHO
-            )
-            if player_hitbox.colliderect(serra_hitbox):
-                colidiu = True
-                break
-
-        if not colidiu:
-            serra_h_screen_x = serra_horizontal["x"] - camera_x
-            serra_h_hitbox = pygame.Rect(
-                serra_h_screen_x - SERRA_HORIZONTAL_TAMANHO // 2,
-                serra_horizontal["y"] - SERRA_HORIZONTAL_TAMANHO // 2,
-                SERRA_HORIZONTAL_TAMANHO,
-                SERRA_HORIZONTAL_TAMANHO
-            )
-            if player_hitbox.colliderect(serra_h_hitbox):
-                colidiu = True
-
-        if colidiu:
+        if sala3_obj.checar_colisao(player_hitbox, camera_x):
             damage_sfx.set_volume(0.8 * Volume_Sons * Volume_Geral)
             damage_sfx.play()
             player.body.position = (250, 455)
             player.body.velocity = (0, 0)
             player.has_tp = False
 
-        if player.body.position.x < 400:
-            screen.blit(E_gui, (140, 275))
-            range_volta_sala3 = True
-        else:
-            range_volta_sala3 = False
+        sala3_obj.checar_saida(player.body.position.x, screen, E_gui)
 
-        #region Animation Cooldowns
-        if player.idle_cooldown == 10:
-            player.frame_idle += 1
-            player.idle_cooldown = 0
-        if player.frame_idle == 7:
-            player.frame_idle = 0
-
-        if player.walking_cooldown == 20:
-            player.frame_walking += 1
-            player.walking_cooldown = 0
-        if player.frame_walking == 2:
-            player.frame_walking = 0
+        player.atualizar_animacao()
 
         #region Andar A e Andar D
         if keys[pygame.K_d]:
@@ -1408,9 +1197,6 @@ while run_game:
             player.virado = False
         else:
             player.body.velocity = (player.body.velocity.x * 0.7, player.body.velocity.y)
-
-        player.idle_cooldown += 1
-        player.walking_cooldown += 1
 
         if pausado:
             screen.blit(black_overlay, (0, 0))
@@ -1456,10 +1242,6 @@ while run_game:
         elif player.body.velocity.y == 0 and player.body.velocity.x != 0:
             player.estado = "Walking"
 
-        if player.estado == "Idle":
-            player.image = player.animations["Idle"][player.frame_idle]
-        elif player.estado == "Walking":
-            player.image = player.animations["Walking"][player.frame_walking]
 
         if player.dashing:
             dash_progress = pytweening.easeOutQuart(player.dash_t)
@@ -1542,17 +1324,7 @@ while run_game:
             range_volta_sala2 = False
 
         #region Animation Cooldowns
-        if player.idle_cooldown == 10:
-            player.frame_idle += 1
-            player.idle_cooldown = 0
-        if player.frame_idle == 7:
-            player.frame_idle = 0
-
-        if player.walking_cooldown == 20:
-            player.frame_walking += 1
-            player.walking_cooldown = 0
-        if player.frame_walking == 2:
-            player.frame_walking = 0
+        player.atualizar_animacao()
 
         #region Andar A e Andar D
         if keys[pygame.K_d]:
@@ -1563,9 +1335,6 @@ while run_game:
             player.virado = False
         else:
             player.body.velocity = (player.body.velocity.x * 0.7, player.body.velocity.y)
-
-        player.idle_cooldown += 1
-        player.walking_cooldown += 1
 
         if pausado:
             screen.blit(black_overlay, (0, 0))
