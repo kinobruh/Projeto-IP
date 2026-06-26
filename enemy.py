@@ -231,21 +231,8 @@ class Enemy:
     def draw(self, screen, camera_x=0):
         if not self.vivo:
             return
-
         rect = self.get_visual_rect(camera_x)
-
-        if self.sprite_original is not None:
-            imagem = self.sprite_original
-            if self.virado:
-                imagem = pygame.transform.flip(imagem, True, False)
-            screen.blit(imagem, rect.topleft)
-        else:
-            pygame.draw.rect(screen, self.cor_corpo, rect, border_radius=10)
-            pygame.draw.rect(screen, (20, 0, 0), rect, width=2, border_radius=10)
-            cor_olho = self.cor_destaque if self.estado == "atirando" else (255, 255, 255)
-            olho_x = rect.centerx + (18 if self.virado else -18)
-            olho_y = rect.top + 35
-            pygame.draw.circle(screen, cor_olho, (olho_x, olho_y), 8)
-
-        for bullet in self.bullets:
-            bullet.draw(screen, camera_x)
+        imagem = self.sprite_original
+        if self.virado:
+            imagem = pygame.transform.flip(imagem, True, False)
+        screen.blit(imagem, rect.topleft)
