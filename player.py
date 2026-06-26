@@ -4,14 +4,12 @@ import pytweening
 
 
 class Player:
-    # Constantes de movimento
     VELOCIDADE_DIREITA  = 520
     VELOCIDADE_ESQUERDA = 375
     VELOCIDADE_PULO     = -500
     DASH_DISTANCE       = 200
     DASH_DURATION       = 0.15
 
-    # Constantes de animação
     IDLE_FRAMES        = 7
     IDLE_COOLDOWN_MAX  = 10
     WALKING_FRAMES     = 2
@@ -47,25 +45,17 @@ class Player:
         self.has_tp = False
         self.tp_pos = (0, 0)
 
-    # ------------------------------------------------------------------
-    # Propriedades
-    # ------------------------------------------------------------------
+        self.shadow_opacity = 0
 
     @property
     def vivo(self) -> bool:
         return self.life > 0
 
-    # ------------------------------------------------------------------
-    # Ações — chamadas pelo main.py no lugar de código inline
-    # ------------------------------------------------------------------
-
     def pular(self) -> None:
-        """Executa o pulo se o player estiver no chão."""
         if self.body.velocity.y == 0:
             self.body.velocity = (self.body.velocity.x, self.VELOCIDADE_PULO)
 
     def iniciar_dash(self) -> None:
-        """Prepara o dash na direção em que o player está virado."""
         if self.dashing:
             return
         self.dashing    = True
@@ -76,7 +66,6 @@ class Player:
         self.dash_final = self.body.position.x + offset
 
     def usar_teleporte(self) -> None:
-        """Cria ou consome o ponto de teleporte."""
         if not self.has_tp:
             self.tp_pos = (self.body.position.x, self.body.position.y)
             self.has_tp = True
@@ -87,12 +76,7 @@ class Player:
     def levar_dano(self, quantidade: int = 1) -> None:
         self.life -= quantidade
 
-    # ------------------------------------------------------------------
-    # Atualização de animação — tira do main.py
-    # ------------------------------------------------------------------
-
     def atualizar_animacao(self) -> None:
-        """Avança cooldowns e seleciona o frame correto. Chame 1x por frame."""
         self.idle_cooldown += 1
         if self.idle_cooldown >= self.IDLE_COOLDOWN_MAX:
             self.idle_cooldown = 0
@@ -107,3 +91,53 @@ class Player:
             self.image = self.animations["Idle"][self.frame_idle]
         elif self.estado == "Walking":
             self.image = self.animations["Walking"][self.frame_walking]
+
+    def draw(self, screen, pos_x, pos_y, efeitos_fase1=False):
+        imagem = self.image
+
+        # dash traces
+        if self.dashing:
+            imagem = pygame.transform.scale(imagem, (170, 349))
+            self.traces.append([pos_x, pos_y, 180])
+
+            for trace in self.traces:
+                trace_surf = pygame.transform.scale(imagem, (200, 349))
+                trace_surf.fill('maroon1', special_flags=pygame.BLEND_ADD)
+                trace_surf.set_alpha(trace[2])
+                if not self.virado:
+                    screen.blit(trace_surf, (trace[0], trace[1]))
+                else:
+                    trace_surf = pygame.transform.flip(trace_surf, True, False)
+                    screen.blit(trace_surf, (trace[0] - 25, trace[1]))
+                trace[2] -= 30
+
+            self.traces = [t for t in self.traces if t[2] > 0]
+
+        if self.virado:
+            imagem = pygame.transform.flip(imagem, True, False)
+
+        screen.blit(imagem, (pos_x, pos_y))
+
+        if efeitos_fase1:
+            self._desenhar_efeitos_fase1(screen, imagem, pos_x, pos_y)
+
+    def _desenhar_efeitos_fase1(self, screen, imagem, pos_x, pos_y):
+        purple_overlay = imagem.copy()
+        purple_overlay.fill('Purple', special_flags=pygame.BLEND_MULT)
+        purple_overlay.set_alpha(40)
+        screen.blit(purple_overlay, (pos_x, pos_y))
+
+        blue_overlay = imagem.copy()
+        blue_overlay.fill('Blue', special_flags=pygame.BLENDMODE_BLEND)
+        blue_overlay.set_alpha(30)
+        screen.blit(blue_overlay, (pos_x, pos_y))
+
+        shadow_overlay = imagem.copy()
+        shadow_overlay.fill((52, 9, 127), special_flags=pygame.BLENDMODE_MOD)
+        shadow_overlay.set_alpha(self.shadow_opacity)
+        if 450 <= pos_x <= 510 or 20 <= pos_x <= 100 or 795 <= pos_x <= 865 or 1105 <= pos_x <= 1200:
+            screen.blit(shadow_overlay, (pos_x, pos_y))
+            if self.shadow_opacity < 100:
+                self.shadow_opacity += 25
+        else:
+            self.shadow_opacity = 0
