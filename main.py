@@ -304,6 +304,7 @@ sala_anterior_options = GameState.JOGANDO
 shoot_sfx = pygame.mixer.Sound(SFX / "shoot.mp3")
 enemy_sprite = pygame.image.load(SPRITES / "enemy.png").convert_alpha()
 enemy_sprite = pygame.transform.scale_by(enemy_sprite, 2)
+bullet_sprite = pygame.image.load(SPRITES / "bullet.png").convert_alpha()
 #endregion
 
 #region Textos
@@ -416,7 +417,7 @@ game_sons = {
 game = Game(
     animations,
     sala1_surface, sala_geral, sala3,
-    serra_sprite, enemy_sprite,
+    serra_sprite, enemy_sprite, bullet_sprite,
     fase1_sprites, fase1_textos,
     sala_geral_sprites, sala_geral_textos,
     E_gui,

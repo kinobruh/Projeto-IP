@@ -4,16 +4,19 @@ import pytweening
 
 
 class Bullet:
-
-    def __init__(self, x, y, direcao, velocidade=650, largura=22, altura=8, cor=(255, 80, 40)):
+    def __init__(self, x, y, direcao, sprite, velocidade=650):
         self.x = x
         self.y = y
         self.direcao = direcao
         self.velocidade = velocidade
-        self.largura = largura
-        self.altura = altura
-        self.cor = cor
         self.vivo = True
+        self.sprite_original = sprite
+        self.largura = self.sprite_original.get_width()
+        self.altura = self.sprite_original.get_height()
+        if self.direcao < 0:
+            self.sprite = pygame.transform.flip(self.sprite_original, True, False)
+        else:
+            self.sprite = self.sprite_original
 
     def update(self, time_delta):
         self.x += self.velocidade * self.direcao * time_delta
@@ -28,14 +31,12 @@ class Bullet:
 
     def draw(self, screen, camera_x=0):
         rect = self.get_rect(camera_x)
-        pygame.draw.rect(screen, self.cor, rect, border_radius=3)
-        pygame.draw.rect(screen, (255, 220, 180), rect, width=1, border_radius=3)
+        screen.blit(self.sprite, rect.topleft)
 
 
 class Enemy:
     LARGURA = 90
     ALTURA = 180
-
     def __init__(
         self,
         x,
@@ -47,13 +48,12 @@ class Enemy:
         tolerancia_y=260,
         cooldown_tiro=1.5,
         sprite=None,
+        bullet_sprite=None,
         altura_flutuacao=70,
         amplitude_flutuacao=18,
         velocidade_flutuacao=1.6,
         distancia_recoil=22,
         duracao_recoil=0.18,
-        cor_corpo=(180, 40, 40),
-        cor_destaque=(255, 200, 60),
     ):
         self.x = x
         self.y = y
@@ -65,12 +65,9 @@ class Enemy:
         self.cooldown_tiro = cooldown_tiro
 
         self.sprite_original = sprite
-        if self.sprite_original is not None:
-            self.LARGURA = self.sprite_original.get_width()
-            self.ALTURA = self.sprite_original.get_height()
-
-        self.cor_corpo = cor_corpo
-        self.cor_destaque = cor_destaque
+        self.LARGURA = self.sprite_original.get_width()
+        self.ALTURA = self.sprite_original.get_height()
+        self.bullet_sprite = bullet_sprite
 
         self.direcao_patrulha = 1
         self.virado = True
@@ -88,16 +85,13 @@ class Enemy:
         self.amplitude_flutuacao = amplitude_flutuacao
         self.velocidade_flutuacao = velocidade_flutuacao
         self.flutuacao_t = random.uniform(0, 2.0)
-        self.flutuacao_offset = 0.0 
-        #endregion
+        self.flutuacao_offset = 0.0
 
-        #region Recoil
         self.distancia_recoil = distancia_recoil
         self.duracao_recoil = duracao_recoil
         self.em_recoil = False
         self.recoil_t = 0.0
         self.recoil_offset = 0.0
-        #endregion
 
     def vê_o_player(self, player_x, player_y):
         dist_x = player_x - self.x
@@ -196,7 +190,7 @@ class Enemy:
         origem_y = self.y - self.altura_flutuacao + self.flutuacao_offset
         bullet_x = origem_x + (self.LARGURA // 2) * direcao
         bullet_y = origem_y - self.ALTURA * 0.45
-        self.bullets.append(Bullet(bullet_x, bullet_y, direcao))
+        self.bullets.append(Bullet(bullet_x, bullet_y, direcao, self.bullet_sprite))
 
         if sfx_tiro is not None:
             sfx_tiro.set_volume(volume_sfx)
@@ -236,3 +230,5 @@ class Enemy:
         if self.virado:
             imagem = pygame.transform.flip(imagem, True, False)
         screen.blit(imagem, rect.topleft)
+        for bullet in self.bullets:
+            bullet.draw(screen, camera_x)
