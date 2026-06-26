@@ -18,9 +18,7 @@ _FALAS = [
     ("slash_neutro",   "slash", ["Tutorial_Fala12"]),
 ]
 
-# Falas em que o prompt "aperte enter" aparece
-_FALAS_COM_ENTER = {0, 1, 2, 5, 11}
-
+ENTER = {0, 1, 2, 5, 11}
 
 class Fase1:
     LARGURA_TELA = 1280
@@ -111,45 +109,59 @@ class Fase1:
         screen.fill((0, 0, 0))
         screen.blit(self.superficie, (0, 10))
 
-        # carros
         for c in self._carros:
             screen.blit(self.sprites[c["sprite"]], (c["x"], c["y"]))
 
-        # dash traces + player + efeitos fase1
         player.draw(screen, pos_x, pos_y, efeitos_fase1=True)
 
-        # porta
         if self.range_da_porta:
             screen.blit(self.sprites["E_gui"], (1190, 275))
 
-        # tutorial
         if not self.tutorial_acabou:
             self._desenhar_tutorial(screen)
 
-        # barra de vida
-        self._desenhar_vida(screen, player, damage_sfx, volume_sfx)
+        # vida
+        if player.life == 3:
+            screen.blit(self.sprites["life_bar_3"], (20, 20))
+            self._vida_anterior = 3
+
+        elif player.life == 2:
+            if self._vida_anterior == 3:
+                damage_sfx.set_volume(volume_sfx)
+                damage_sfx.play()
+
+            self._vida_anterior = 2
+            screen.blit(self.sprites["life_bar_2"], (20, 20))
+
+        elif player.life == 1:
+            if self._vida_anterior == 2:
+                damage_sfx.set_volume(volume_sfx)
+                damage_sfx.play()
+
+            self._vida_anterior = 1
+            screen.blit(self.sprites["life_bar_1"], (20, 20))
 
         return pos_x, pos_y
 
     def _desenhar_tutorial(self, screen):
-        t  = self.textos
-        sp = self.sprites
-        idx = self.fala_tutorial
-        if idx >= len(_FALAS):
+        text  = self.textos
+        spritetext = self.sprites
+        i = self.fala_tutorial
+        if i >= len(_FALAS):
             return
 
-        sprite_key, quem, linhas = _FALAS[idx]
-        base_x = (self.LARGURA_TELA // 2) - (sp["slash_neutro"].get_width() // 2)
+        sprite_key, personagem, linhas = _FALAS[i]
+        base_x = (self.LARGURA_TELA // 2) - (spritetext["slash_neutro"].get_width() // 2)
         nome_y  = 530
         texto_y = 560
 
-        screen.blit(sp[sprite_key], (base_x, 520))
-        screen.blit(t[f"{quem}_name"], (base_x + 150, nome_y))
+        screen.blit(spritetext[sprite_key], (base_x, 520))
+        screen.blit(text[f"{personagem}_name"], (base_x + 150, nome_y))
         for i, chave in enumerate(linhas):
-            screen.blit(t[chave], (base_x + 150, texto_y + i * 22))
+            screen.blit(text[chave], (base_x + 150, texto_y + i * 22))
 
-        if idx in _FALAS_COM_ENTER:
-            screen.blit(t["aperte_enter"], (base_x + 540, 640))
+        if i in ENTER:
+            screen.blit(text["aperte_enter"], (base_x + 540, 640))
 
     def _desenhar_vida(self, screen, player, damage_sfx, volume_sfx):
         sp = self.sprites

@@ -9,8 +9,8 @@ class Sala3:
     LARGURA_TELA       = 1280
     ALTURA_TELA        = 720
     ESPACAMENTO_SERRA  = 350
-    MARGEM_INICIAL     = 600
-    MARGEM_FINAL_LIVRE = 500
+    INICIO     = 600
+    SOBRA = 500
 
     def __init__(self, superficie, sprite_serra):
         self.superficie   = superficie
@@ -20,22 +20,22 @@ class Sala3:
         self.range_volta  = False
 
         # serras verticais
-        fases_base       = [0.0, 0.3, 0.6, 0.15, 0.45, 0.75]
-        velocidades_base = [0.45, 0.55, 0.4, 0.5, 0.6, 0.35]
-        limite   = self.largura - self.MARGEM_FINAL_LIVRE
-        x_atual  = self.MARGEM_INICIAL
-        fase_idx = 0
+        start       = [0.0, 0.3, 0.6, 0.15, 0.45, 0.75]
+        velocidades_serras = [0.45, 0.55, 0.4, 0.5, 0.6, 0.35]
+        limite   = self.largura - self.SOBRA
+        x_atual  = self.INICIO
+        fase_i = 0
         self.serras = []
         while x_atual < limite:
             self.serras.append(SerraVertical(
                 x      = x_atual,
                 y_topo = random.randint(80, 150),
                 y_base = random.randint(450, 540),
-                vel    = velocidades_base[fase_idx % len(velocidades_base)],
-                fase   = fases_base[fase_idx % len(fases_base)],
+                vel    = velocidades_serras[fase_i % len(velocidades_serras)],
+                fase   = start[fase_i % len(start)],
             ))
             x_atual  += self.ESPACAMENTO_SERRA
-            fase_idx += 1
+            fase_i += 1
 
         self.serra_horizontal = SerraHorizontal(x_min=1100, x_max=1900, y=540, vel=280)
 
@@ -45,10 +45,10 @@ class Sala3:
 
     def update(self, time_delta, player, space):
         # estado do player
-        vx, vy = player.body.velocity
-        if vx == 0 and vy == 0:
+        velx, vely = player.body.velocity
+        if velx == 0 and vely == 0:
             player.estado = "Idle"
-        elif vy == 0 and vx != 0:
+        elif vely == 0 and velx != 0:
             player.estado = "Walking"
 
         # dash

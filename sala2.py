@@ -1,16 +1,14 @@
 import pygame
 import pytweening
-
 from enemy import Enemy
-
 
 class Sala2:
     LARGURA_TELA = 1280
     ALTURA_TELA  = 720
 
-    def __init__(self, superficie, enemy_sprite):
-        self.superficie = superficie
-        self.largura    = superficie.get_width()
+    def __init__(self, surfece, enemy_sprite):
+        self.surface = surfece
+        self.largura    = surfece.get_width()
         self.range_volta = False
 
         self.inimigo = Enemy(
@@ -26,10 +24,10 @@ class Sala2:
 
     def update(self, time_delta, player, space, shoot_sfx, volume_sfx):
         # estado do player
-        vx, vy = player.body.velocity
-        if vx == 0 and vy == 0:
+        velx, vely = player.body.velocity
+        if velx == 0 and vely == 0:
             player.estado = "Idle"
-        elif vy == 0 and vx != 0:
+        elif vely == 0 and velx != 0:
             player.estado = "Walking"
 
         # dash
@@ -60,7 +58,7 @@ class Sala2:
 
     def draw(self, screen, player, camera_x, pos_x, pos_y, time_delta):
         screen.fill((0, 0, 0))
-        screen.blit(self.superficie, (-camera_x, 10))
+        screen.blit(self.surface, (-camera_x, 10))
 
         player.draw(screen, pos_x, pos_y)
         self.inimigo.draw(screen, camera_x)

@@ -22,15 +22,20 @@ As configurações globais do jogo foram concentradas em um único arquivo, faci
 
 ## Ferramentas utilizadas
 
-Python: linguagem utilizada no desenvolvimento do projeto.
-Pygame-ce: responsável pela renderização gráfica, gerenciamento de eventos e execução do jogo.
-Pymunk: utilizado para implementar a física e o sistema de colisões.
-Pyganim: empregado no gerenciamento das animações dos personagens.
-PyTMX e Pyscroll: utilizados para carregamento e renderização dos mapas.
-pygame_gui: utilizado na criação da interface gráfica e dos menus.
-Pytweening: empregado para animações e transições suaves na interface.
+* Python: linguagem utilizada no desenvolvimento do projeto.
+* Pygame-ce: responsável pela renderização gráfica, gerenciamento de eventos e execução do jogo.
+* Pymunk: utilizado para implementar a física e o sistema de colisões.
+* Pyganim: empregado no gerenciamento das animações dos personagens.
+* Pyscroll: faz a renderização dos mapas e o sistema de câmera/scrolling.
+* pygame_gui: utilizado na criação da interface gráfica e dos menus.
+* Pytweening: empregado para animações e transições suaves na interface.
 
 ## Membros da equipe e suas funções
+
+* [João Bernardo - jbgac](https://github.com/kinobruh)
+* [Kamilla Menezes - krms](https://github.com/kamillaarm)
+* [Lucas Medrado - lms16](https://github.com/lucmedrado)
+* [Sofia Sobreira - ssm](https://github.com/sofiisobreira)
 
 ## Conceitos utilizados
 

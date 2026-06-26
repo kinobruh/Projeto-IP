@@ -19,26 +19,20 @@ class SalaGeral:
     DURACAO_FALA_PORTA    = 300
 
     def __init__(self, superficie, sprites, textos):
-
         self.superficie = superficie
         self.sprites    = sprites
         self.textos     = textos
         self.largura    = superficie.get_width()
-
         self.range_volta = False
-
         self.range_porta_saida = False
         self.range_porta3      = False
         self.range_porta2      = False
-
         self.todas_chaves = False
         self.checou_porta = False
-
         self.em_cutscene           = True
         self.cutscene_x            = 0
         self.timer_cutscene        = self.DURACAO_CUTSCENE
         self.timer_cutscene_progress = self.DURACAO_CUTSCENE
-
         self.em_fala_porta  = False
         self.timer_fala_porta = self.DURACAO_FALA_PORTA
 
@@ -50,12 +44,10 @@ class SalaGeral:
         self.range_porta2      = False
         self.todas_chaves      = False
         self.checou_porta      = False
-
         self.em_cutscene             = True
         self.cutscene_x              = 0
         self.timer_cutscene          = self.DURACAO_CUTSCENE
         self.timer_cutscene_progress = self.DURACAO_CUTSCENE
-
         self.em_fala_porta   = False
         self.timer_fala_porta = self.DURACAO_FALA_PORTA
 
