@@ -1,6 +1,9 @@
+from __future__ import annotations
 import random
 import pygame
-import pytweening
+
+from sala_base import SalaBase
+
 
 _FALAS = [
     ("slash_neutro",   "slash", ["Tutorial_Fala0",   "Tutorial_Fala0_1"]),
@@ -18,93 +21,102 @@ _FALAS = [
     ("slash_neutro",   "slash", ["Tutorial_Fala12"]),
 ]
 
-ENTER = {0, 1, 2, 5, 11}
+_ENTER_FALAS = {0, 1, 2, 5, 11}
 
-class Fase1:
-    LARGURA_TELA = 1280
-    ALTURA_TELA  = 720
-    CLAMP_MAX_X  = 1230
+_POSICOES_INICIAIS_CARROS = [
+    ("carro_direita",  600, 200,  1, True),
+    ("carro_direita",  400, 250,  1, True),
+    ("carro_esquerda", 800, 180, -1, True),
+    ("carro_direita",  900, 220,  1, True),
+    ("carro_esquerda", 300, 260, -1, False),
+]
 
-    def __init__(self, superficie, sprites, textos):
-        self.superficie = superficie
-        self.sprites    = sprites
-        self.textos     = textos
+CLAMP_MAX_X = 1230
 
-        self.range_da_porta = False
+
+class Fase1(SalaBase):
+    """Fase tutorial — exterior do prédio."""
+
+    CLAMP_MIN_X = 190
+    CLAMP_MAX_X = 1230
+
+    # Posições de rolagem de câmera (não há câmera aqui, sala é fixa)
+    _X_PORTA = 1000
+
+    def __init__(self, superficie: pygame.Surface,
+                 sprites: dict, textos: dict) -> None:
+        super().__init__(superficie)
+        self.sprites = sprites
+        self.textos  = textos
+
+        self.range_da_porta  = False
         self.tutorial_acabou = False
         self.fala_tutorial   = 0
 
-        # carros
-        self._carros = [
-            {"sprite": "carro_direita",   "x": 600, "y": 200, "dx":  1, "x_min": 260, "x_max": 1085, "rand_y": True},
-            {"sprite": "carro_direita",   "x": 400, "y": 250, "dx":  1, "x_min": 260, "x_max": 1085, "rand_y": True},
-            {"sprite": "carro_esquerda",  "x": 800, "y": 180, "dx": -1, "x_min": 260, "x_max": 1085, "rand_y": True},
-            {"sprite": "carro_direita",   "x": 900, "y": 220, "dx":  1, "x_min": 260, "x_max": 1085, "rand_y": True},
-            {"sprite": "carro_esquerda",  "x": 300, "y": 260, "dx": -1, "x_min": 260, "x_max": 1085, "rand_y": False},
-        ]
-
+        self._carros = self._criar_carros()
         self._vida_anterior = 3
+        # flag para game.py tocar SFX de dano (lógica saiu do draw)
+        self.tocou_dano = False
 
-    def avancar_tutorial(self):
+    # ------------------------------------------------------------------
+    # Inicialização
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _criar_carros() -> list[dict]:
+        carros = []
+        x_min, x_max = 260, 1085
+        for sprite_key, x, y, dx, rand_y in _POSICOES_INICIAIS_CARROS:
+            carros.append({
+                "sprite": sprite_key,
+                "x": x, "y": y,
+                "dx": dx,
+                "x_min": x_min, "x_max": x_max,
+                "rand_y": rand_y,
+                "_x0": x, "_y0": y,      # guarda posição inicial p/ reset
+            })
+        return carros
+
+    # ------------------------------------------------------------------
+    # Interface pública
+    # ------------------------------------------------------------------
+
+    def avancar_tutorial(self) -> None:
         self.fala_tutorial += 1
 
-    def reset(self):
+    def reset(self) -> None:
+        super().reset()
         self.tutorial_acabou = False
         self.fala_tutorial   = 0
         self._vida_anterior  = 3
-        for i, c in enumerate(self._carros):
-            c["x"] = [600, 400, 800, 900, 300][i]
-            c["y"] = [200, 250, 180, 220, 260][i]
-
-    def update(self, player, space, time_delta):
-        # estado do player
-        vx, vy = player.body.velocity
-        if vx == 0 and vy == 0:
-            player.estado = "Idle"
-        elif vy == 0 and vx != 0:
-            player.estado = "Walking"
-
-        # dash
-        if player.dashing:
-            dash_progress = pytweening.easeOutQuart(player.dash_t)
-            new_x = player.dash_inicial + (player.dash_final - player.dash_inicial) * dash_progress
-            player.body.position = (new_x, player.body.position.y)
-            player.body.velocity = (0, player.body.velocity.y)
-            player.dash_t += time_delta / player.dash_duration
-            if player.dash_t >= 1:
-                player.dash_t = 1
-                player.dashing = False
-
-        space.step(1 / 60)
-
-        # clamp
-        x = max(190, min(player.body.position.x, self.CLAMP_MAX_X))
-        y = max(0,   min(player.body.position.y, self.ALTURA_TELA))
-        player.body.position = (x, y)
-
-        # carros
+        self.tocou_dano      = False
         for c in self._carros:
-            c["x"] += c["dx"]
-            if c["dx"] > 0 and c["x"] > c["x_max"]:
-                c["x"] = c["x_min"]
-                if c["rand_y"]:
-                    c["y"] = random.randint(180, 295)
-            elif c["dx"] < 0 and c["x"] < c["x_min"]:
-                c["x"] = c["x_max"]
-                if c["rand_y"]:
-                    c["y"] = random.randint(180, 295)
+            c["x"] = c["_x0"]
+            c["y"] = c["_y0"]
 
-        # porta
-        self.range_da_porta = self.tutorial_acabou and player.body.position.x > 1000
+    # ------------------------------------------------------------------
+    # Update e Draw (contrato SalaBase)
+    # ------------------------------------------------------------------
 
-        # tutorial
+    def update(self, time_delta: float, player, space) -> None:
+        """
+        Atualiza lógica da fase 1.
+        player.update() cuida de dash + física — não duplicamos aqui.
+        """
+        player.update(space, time_delta)
+        self._mover_carros()
+        self._verificar_porta(player)
+        self._verificar_vida(player)
+
         if self.fala_tutorial >= len(_FALAS):
             self.tutorial_acabou = True
 
-
-    def draw(self, screen, player, damage_sfx, volume_sfx):
-        pos_x = player.body.position.x - 110
-        pos_y = player.body.position.y - 235
+    def draw(self, screen: pygame.Surface, player,
+             camera_x: int = 0, pos_x: int = 0, pos_y: int = 0) -> None:
+        """Renderiza a fase 1. Não contém lógica de gameplay."""
+        # Nesta sala não há câmera scrolling; calculamos pos direto
+        pos_x = int(player.body.position.x - 110)
+        pos_y = int(player.body.position.y - 235)
 
         screen.fill((0, 0, 0))
         screen.blit(self.superficie, (0, 10))
@@ -120,63 +132,65 @@ class Fase1:
         if not self.tutorial_acabou:
             self._desenhar_tutorial(screen)
 
-        # vida
-        if player.life == 3:
-            screen.blit(self.sprites["life_bar_3"], (20, 20))
-            self._vida_anterior = 3
+        self._desenhar_vida(screen, player)
 
-        elif player.life == 2:
-            if self._vida_anterior == 3:
-                damage_sfx.set_volume(volume_sfx)
-                damage_sfx.play()
+    # ------------------------------------------------------------------
+    # Lógica interna
+    # ------------------------------------------------------------------
 
-            self._vida_anterior = 2
-            screen.blit(self.sprites["life_bar_2"], (20, 20))
+    def _mover_carros(self) -> None:
+        for c in self._carros:
+            c["x"] += c["dx"]
+            if c["dx"] > 0 and c["x"] > c["x_max"]:
+                c["x"] = c["x_min"]
+                if c["rand_y"]:
+                    c["y"] = random.randint(180, 295)
+            elif c["dx"] < 0 and c["x"] < c["x_min"]:
+                c["x"] = c["x_max"]
+                if c["rand_y"]:
+                    c["y"] = random.randint(180, 295)
 
-        elif player.life == 1:
-            if self._vida_anterior == 2:
-                damage_sfx.set_volume(volume_sfx)
-                damage_sfx.play()
+    def _verificar_porta(self, player) -> None:
+        self.range_da_porta = (self.tutorial_acabou
+                               and player.body.position.x > self._X_PORTA)
 
-            self._vida_anterior = 1
-            screen.blit(self.sprites["life_bar_1"], (20, 20))
+    def _verificar_vida(self, player) -> None:
+        """Detecta perda de vida e sinaliza para game.py tocar SFX."""
+        self.tocou_dano = False
+        if player.life < self._vida_anterior:
+            self.tocou_dano = True
+        self._vida_anterior = player.life
 
-        return pos_x, pos_y
+    # ------------------------------------------------------------------
+    # Renderização auxiliar
+    # ------------------------------------------------------------------
 
-    def _desenhar_tutorial(self, screen):
-        text  = self.textos
-        spritetext = self.sprites
+    def _desenhar_tutorial(self, screen: pygame.Surface) -> None:
         i = self.fala_tutorial
         if i >= len(_FALAS):
             return
 
         sprite_key, personagem, linhas = _FALAS[i]
-        base_x = (self.LARGURA_TELA // 2) - (spritetext["slash_neutro"].get_width() // 2)
+        sp = self.sprites
+        t  = self.textos
+        base_x = (self.LARGURA_TELA // 2) - (sp["slash_neutro"].get_width() // 2)
         nome_y  = 530
         texto_y = 560
 
-        screen.blit(spritetext[sprite_key], (base_x, 520))
-        screen.blit(text[f"{personagem}_name"], (base_x + 150, nome_y))
-        for i, chave in enumerate(linhas):
-            screen.blit(text[chave], (base_x + 150, texto_y + i * 22))
+        screen.blit(sp[sprite_key], (base_x, 520))
+        screen.blit(t[f"{personagem}_name"], (base_x + 150, nome_y))
+        for j, chave in enumerate(linhas):
+            screen.blit(t[chave], (base_x + 150, texto_y + j * 22))
 
-        if i in ENTER:
-            screen.blit(text["aperte_enter"], (base_x + 540, 640))
+        if i in _ENTER_FALAS:
+            screen.blit(t["aperte_enter"], (base_x + 540, 640))
 
-    def _desenhar_vida(self, screen, player, damage_sfx, volume_sfx):
+    def _desenhar_vida(self, screen: pygame.Surface, player) -> None:
         sp = self.sprites
-        if player.life == 3:
+        vida = player.life
+        if vida >= 3:
             screen.blit(sp["life_bar_3"], (20, 20))
-            self._vida_anterior = 3
-        elif player.life == 2:
-            if self._vida_anterior == 3:
-                damage_sfx.set_volume(volume_sfx)
-                damage_sfx.play()
-            self._vida_anterior = 2
+        elif vida == 2:
             screen.blit(sp["life_bar_2"], (20, 20))
-        elif player.life == 1:
-            if self._vida_anterior == 2:
-                damage_sfx.set_volume(volume_sfx)
-                damage_sfx.play()
-            self._vida_anterior = 1
+        elif vida == 1:
             screen.blit(sp["life_bar_1"], (20, 20))
