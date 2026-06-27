@@ -1,3 +1,10 @@
+#o audio manager é responsável por gerenciar os efeitos sonoros do jogo
+#permitindo tocar sons com volumes ajustados de acordo com o volume geral e o volume específico de cada efeito
+#ele utiliza um dicionário para armazenar os sons e seus volumes base, e fornece métodos para tocar sons pelo nome ou 
+#diretamente por um objeto Sound.
+
+# um objeto é uma instância de uma classe, que possui atributos e métodos definidos pela classe
+
 from __future__ import annotations
 import pygame
 
@@ -17,14 +24,14 @@ _VOLUMES_BASE: dict[str, float] = {
 
 
 class AudioManager:
-    """Gerencia SFX com volume relativo ao master e ao canal de sons."""
+    #Gerencia SFX com volume relativo ao master e ao canal de sons.
 
     def __init__(self, sons: dict[str, pygame.mixer.Sound]) -> None:
         self._sons = sons
 
     def tocar(self, nome: str, volume_sons: float = 1.0,
               volume_geral: float = 1.0) -> None:
-        """Reproduz um SFX com volume = base * volume_sons * volume_geral."""
+        #reproduz um SFX com volume = base * volume_sons * volume_geral.
         sfx = self._sons.get(nome)
         if sfx is None:
             return
@@ -35,8 +42,7 @@ class AudioManager:
     def tocar_sfx_direto(self, sfx: pygame.mixer.Sound, nome: str,
                           volume_sons: float = 1.0,
                           volume_geral: float = 1.0) -> None:
-        """Reproduz um objeto Sound avulso usando o volume base pelo nome."""
-        base = _VOLUMES_BASE.get(nome, 1.0)
+        #reproduz um objeto Sound avulso usando o volume base pelo nome.
         sfx.set_volume(base * volume_sons * volume_geral)
         sfx.play()
 

@@ -21,7 +21,6 @@ class GameState(Enum):
     SALA3     = 4
 
 
-# Posições de spawn nomeadas
 _SPAWN_FASE1  = (250, 430)
 _SPAWN_PADRAO = (250, 455)
 
@@ -91,7 +90,7 @@ class Game:
 
     # ------------------------------------------------------------------
     # Física
-    # ------------------------------------------------------------------
+   
 
     @staticmethod
     def _criar_chao(pos: tuple, largura: int):
@@ -111,9 +110,7 @@ class Game:
             self.space.add(new_body, new_shape)
         self._chao_atual = novo_chao
 
-    # ------------------------------------------------------------------
-    # Entrada de teclado
-    # ------------------------------------------------------------------
+   
 
     def handle_keydown(self, event: pygame.event.Event,
                         volume_sons: float = 1.0,
@@ -199,9 +196,6 @@ class Game:
         self.player.virado    = True
         self.transicao_opacity = 255
 
-    # ------------------------------------------------------------------
-    # Movimento do player (chamado a cada frame)
-    # ------------------------------------------------------------------
 
     def _mover(self, keys) -> None:
         if keys[pygame.K_d]:
@@ -216,9 +210,6 @@ class Game:
             self.player.body.velocity = (
                 self.player.body.velocity.x * 0.7, self.player.body.velocity.y)
 
-    # ------------------------------------------------------------------
-    # Update principal
-    # ------------------------------------------------------------------
 
     def update(self, time_delta: float,
                volume_sons: float = 1.0,
@@ -239,7 +230,7 @@ class Game:
 
     def _update_fase1(self, time_delta, volume_sons, volume_geral, keys) -> None:
         self.fase1.update(time_delta, self.player, self.space)
-        # SFX de dano sinalizado pela fase1 (saiu do draw)
+       
         if self.fase1.tocou_dano:
             self.audio.tocar("damage", volume_sons, volume_geral)
         self.player.atualizar_animacao()
@@ -319,9 +310,7 @@ class Game:
         self.player.atualizar_animacao()
         self._mover(keys)
 
-    # ------------------------------------------------------------------
-    # Draw principal
-    # ------------------------------------------------------------------
+  
 
     def draw(self, screen: pygame.Surface,
              click_sfx_volume: float = 1.0) -> tuple[int, int]:
@@ -358,9 +347,7 @@ class Game:
 
         return self.pos_x, self.pos_y
 
-    # ------------------------------------------------------------------
-    # Reset
-    # ------------------------------------------------------------------
+
 
     def reset(self) -> None:
         self.player.has_tp = False

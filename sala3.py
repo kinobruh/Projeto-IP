@@ -7,7 +7,7 @@ from serra import SerraVertical, SerraHorizontal
 
 
 class Sala3(SalaBase):
-    """Sala com obstáculos do tipo serra (vertical e horizontal)."""
+    #sala das serras
 
     CLAMP_MIN_X = 190
 
@@ -26,9 +26,7 @@ class Sala3(SalaBase):
         self.serra_horizontal = SerraHorizontal(
             x_min=1100, x_max=1900, y=540, vel=280)
 
-    # ------------------------------------------------------------------
-    # Inicialização
-    # ------------------------------------------------------------------
+   
 
     def _criar_serras_verticais(self) -> list[SerraVertical]:
         velocidades = [0.45, 0.55, 0.40, 0.50, 0.60, 0.35]
@@ -49,10 +47,7 @@ class Sala3(SalaBase):
             i += 1
         return serras
 
-    # ------------------------------------------------------------------
-    # Update e Draw (contrato SalaBase)
-    # ------------------------------------------------------------------
-
+    #mesma coisa, usa sala base
     def update(self, time_delta: float, player, space) -> None:
         # dash + física + estado do player em um só lugar
         player.update(space, time_delta)
@@ -77,13 +72,11 @@ class Sala3(SalaBase):
 
         player.draw(screen, pos_x, pos_y)
 
-    # ------------------------------------------------------------------
-    # Colisão e saída
-    # ------------------------------------------------------------------
+    #fisica das serras, colisão com o player
 
     def checar_colisao(self, player_hitbox: pygame.Rect,
                         camera_x: float) -> bool:
-        """Retorna True se o player colide com qualquer serra."""
+        #retorna se o player colidiu com alguma serra (vertical ou horizontal)
         for serra in self.serras:
             if player_hitbox.colliderect(serra.get_hitbox(camera_x)):
                 return True
@@ -92,5 +85,5 @@ class Sala3(SalaBase):
 
     def checar_saida(self, player_x: float, screen: pygame.Surface,
                      E_gui: pygame.Surface) -> None:
-        """Herdado de SalaBase (saída à esquerda, x < 400)."""
+        
         super().checar_saida(player_x, screen, E_gui)

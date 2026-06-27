@@ -5,7 +5,7 @@ import pytweening
 
 
 class Bullet:
-    """Projétil disparado pelo inimigo."""
+    #bala disparada
 
     def __init__(self, x: float, y: float, direcao: int,
                  sprite: pygame.Surface, velocidade: float = 650) -> None:
@@ -37,7 +37,7 @@ class Bullet:
 
 
 class Enemy:
-    """Inimigo flutuante com patrulha, visão e disparo."""
+    #inimigo que atira e flutua
 
     def __init__(
         self,
@@ -98,10 +98,6 @@ class Enemy:
         self.recoil_t         = 0.0
         self.recoil_offset    = 0.0
 
-    # ------------------------------------------------------------------
-    # Atualização principal
-    # ------------------------------------------------------------------
-
     def update(self, time_delta: float, player_x: float, player_y: float,
                sfx_tiro: pygame.mixer.Sound | None = None,
                volume_sfx: float = 1.0) -> None:
@@ -146,9 +142,7 @@ class Enemy:
                     self.tiro_timer = 0.0
                     self._disparar(sfx_tiro, volume_sfx)
 
-    # ------------------------------------------------------------------
-    # Movimentação e efeitos
-    # ------------------------------------------------------------------
+ 
 
     def _patrulhar(self, time_delta: float) -> None:
         self.x += self.velocidade_patrulha * self.direcao_patrulha * time_delta
@@ -207,9 +201,6 @@ class Enemy:
         self.em_recoil = True
         self.recoil_t  = 0.0
 
-    # ------------------------------------------------------------------
-    # Dano, colisão e renderização
-    # ------------------------------------------------------------------
 
     def levar_dano(self, quantidade: int = 1) -> None:
         self.life -= quantidade

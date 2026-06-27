@@ -6,7 +6,7 @@ from enemy import Enemy
 
 
 class Sala2(SalaBase):
-    """Sala com inimigo flutuante que atira projéteis."""
+    #sala do olho
 
     CLAMP_MIN_X = 190
 
@@ -24,10 +24,7 @@ class Sala2(SalaBase):
             bullet_sprite=bullet_sprite,
         )
 
-    # ------------------------------------------------------------------
-    # Update e Draw (contrato SalaBase)
-    # ------------------------------------------------------------------
-
+    #agora usa a sala base
     def update(self, time_delta: float, player, space,
                shoot_sfx=None, volume_sfx: float = 1.0) -> None:
         # dash + física + estado do player em um só lugar
@@ -51,9 +48,7 @@ class Sala2(SalaBase):
         player.draw(screen, pos_x, pos_y)
         self.inimigo.draw(screen, camera_x)
 
-    # ------------------------------------------------------------------
-    # Colisão e saída
-    # ------------------------------------------------------------------
+    
 
     def checar_colisao_balas(self, player_hitbox: pygame.Rect,
                               camera_x: float,

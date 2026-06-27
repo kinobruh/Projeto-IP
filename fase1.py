@@ -1,3 +1,5 @@
+#herda as caracteristicas da classe sala base
+#sala1 não tá feita
 from __future__ import annotations
 import random
 import pygame
@@ -35,12 +37,12 @@ CLAMP_MAX_X = 1230
 
 
 class Fase1(SalaBase):
-    """Fase tutorial — exterior do prédio."""
+    
 
     CLAMP_MIN_X = 190
     CLAMP_MAX_X = 1230
 
-    # Posições de rolagem de câmera (não há câmera aqui, sala é fixa)
+   
     _X_PORTA = 1000
 
     def __init__(self, superficie: pygame.Surface,
@@ -55,13 +57,10 @@ class Fase1(SalaBase):
 
         self._carros = self._criar_carros()
         self._vida_anterior = 3
-        # flag para game.py tocar SFX de dano (lógica saiu do draw)
         self.tocou_dano = False
 
-    # ------------------------------------------------------------------
-    # Inicialização
-    # ------------------------------------------------------------------
-
+    
+    #usa o 2@staticmethod para criar um método que não depende da instância da classe
     @staticmethod
     def _criar_carros() -> list[dict]:
         carros = []
@@ -77,9 +76,6 @@ class Fase1(SalaBase):
             })
         return carros
 
-    # ------------------------------------------------------------------
-    # Interface pública
-    # ------------------------------------------------------------------
 
     def avancar_tutorial(self) -> None:
         self.fala_tutorial += 1
@@ -94,15 +90,9 @@ class Fase1(SalaBase):
             c["x"] = c["_x0"]
             c["y"] = c["_y0"]
 
-    # ------------------------------------------------------------------
-    # Update e Draw (contrato SalaBase)
-    # ------------------------------------------------------------------
 
     def update(self, time_delta: float, player, space) -> None:
-        """
-        Atualiza lógica da fase 1.
-        player.update() cuida de dash + física — não duplicamos aqui.
-        """
+        
         player.update(space, time_delta)
         self._mover_carros()
         self._verificar_porta(player)
@@ -113,8 +103,7 @@ class Fase1(SalaBase):
 
     def draw(self, screen: pygame.Surface, player,
              camera_x: int = 0, pos_x: int = 0, pos_y: int = 0) -> None:
-        """Renderiza a fase 1. Não contém lógica de gameplay."""
-        # Nesta sala não há câmera scrolling; calculamos pos direto
+    
         pos_x = int(player.body.position.x - 110)
         pos_y = int(player.body.position.y - 235)
 
@@ -134,9 +123,6 @@ class Fase1(SalaBase):
 
         self._desenhar_vida(screen, player)
 
-    # ------------------------------------------------------------------
-    # Lógica interna
-    # ------------------------------------------------------------------
 
     def _mover_carros(self) -> None:
         for c in self._carros:
@@ -155,15 +141,12 @@ class Fase1(SalaBase):
                                and player.body.position.x > self._X_PORTA)
 
     def _verificar_vida(self, player) -> None:
-        """Detecta perda de vida e sinaliza para game.py tocar SFX."""
+       
         self.tocou_dano = False
         if player.life < self._vida_anterior:
             self.tocou_dano = True
         self._vida_anterior = player.life
 
-    # ------------------------------------------------------------------
-    # Renderização auxiliar
-    # ------------------------------------------------------------------
 
     def _desenhar_tutorial(self, screen: pygame.Surface) -> None:
         i = self.fala_tutorial

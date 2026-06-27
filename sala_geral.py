@@ -5,7 +5,7 @@ from sala_base import SalaBase
 
 
 class SalaGeral(SalaBase):
-    """Hub central: cutscene de entrada, portas para salas 2 e 3."""
+    #Hub central: cutscene de entrada, portas para salas 2 e 3.
 
     CLAMP_MIN_X = 220
     CLAMP_MAX_X = 1230 * 2 - 70
@@ -41,9 +41,7 @@ class SalaGeral(SalaBase):
         self.em_fala_porta    = False
         self.timer_fala_porta = self._DURACAO_FALA_PORTA
 
-    # ------------------------------------------------------------------
-    # Interface pública
-    # ------------------------------------------------------------------
+
 
     def iniciar_cutscene(self) -> None:
         self.em_cutscene             = True
@@ -79,9 +77,7 @@ class SalaGeral(SalaBase):
         self.em_fala_porta    = False
         self.timer_fala_porta = self._DURACAO_FALA_PORTA
 
-    # ------------------------------------------------------------------
-    # Update e Draw (contrato SalaBase)
-    # ------------------------------------------------------------------
+ 
 
     def update(self, time_delta: float, player, space) -> None:
         if self.em_cutscene:
@@ -100,10 +96,9 @@ class SalaGeral(SalaBase):
     def draw(self, screen: pygame.Surface, player,
              camera_x: int = 0, pos_x: int = 0,
              pos_y: int = 0) -> tuple[int | None, int | None]:
-        """
-        Retorna (pos_x, pos_y) para game.py acompanhar posição do player,
-        ou (None, None) durante cutscene.
-        """
+        
+        # Renderiza a sala geral. Retorna pos_x, pos_y do player para o draw externo.
+    
         if self.em_cutscene:
             self._desenhar_cutscene(screen)
             return None, None
@@ -126,9 +121,7 @@ class SalaGeral(SalaBase):
 
         return pos_x, pos_y
 
-    # ------------------------------------------------------------------
-    # Lógica interna
-    # ------------------------------------------------------------------
+    
 
     def _atualizar_cutscene(self) -> None:
         import pytweening
@@ -152,9 +145,8 @@ class SalaGeral(SalaBase):
         self.range_porta2 = self._X_PORTA2_MIN <= player_x <= self._X_PORTA2_MAX
         self.range_volta  = self.range_porta_saida
 
-    # ------------------------------------------------------------------
-    # Renderização auxiliar
-    # ------------------------------------------------------------------
+   
+    #resetar a sala geral, incluindo cutscene e fala da porta
 
     def _desenhar_cutscene(self, screen: pygame.Surface) -> None:
         sp = self.sprites
@@ -170,10 +162,7 @@ class SalaGeral(SalaBase):
     def _desenhar_fala_porta(self, screen: pygame.Surface,
                                click_sfx=None,
                                volume_sfx: float = 1.0) -> None:
-        """
-        Renderiza a fala da porta. click_sfx é opcional; quando fornecido,
-        toca nos momentos certos.
-        """
+        
         sp    = self.sprites
         t     = self.textos
         timer = self.timer_fala_porta
@@ -198,7 +187,7 @@ class SalaGeral(SalaBase):
 
     def checar_saida(self, player_x: float, screen: pygame.Surface,
                      E_gui: pygame.Surface) -> None:
-        """Compatibilidade: atualiza range e desenha ícone E."""
+       #Compatibilidade: atualiza range e desenha ícone E
         self._atualizar_ranges_portas(player_x)
         if self.range_porta_saida:
             screen.blit(E_gui, (1075, 275))

@@ -4,7 +4,7 @@ import pytweening
 
 
 class SerraBase:
-    """Comportamento compartilhado de todas as serras."""
+    #serras compartilhando o comportamento
 
     TAMANHO_HITBOX: int = 150
 
@@ -32,7 +32,7 @@ class SerraBase:
 
 
 class SerraVertical(SerraBase):
-    """Serra que oscila verticalmente com easing suave."""
+    #vertical
 
     TAMANHO_HITBOX = 150
 
@@ -64,7 +64,7 @@ class SerraVertical(SerraBase):
 
 
 class SerraHorizontal(SerraBase):
-    """Serra que se move horizontalmente de um lado ao outro."""
+    #horizontal
 
     TAMANHO_HITBOX = 175
 

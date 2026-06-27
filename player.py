@@ -61,30 +61,24 @@ class Player:
         # Efeito visual (fase 1)
         self.shadow_opacity = 0
 
-    # ------------------------------------------------------------------
-    # Propriedades
-    # ------------------------------------------------------------------
 
+    #usa o @property para criar um método que pode ser acessado como um atributo
+    #ai pode verificar se o player está vivo com base na quantidade de vida restante
     @property
     def vivo(self) -> bool:
         return self.life > 0
 
-    # ------------------------------------------------------------------
-    # Atualização (chamada por cada sala)
-    # ------------------------------------------------------------------
+   #atualiza o estado do player, processa o dash e aplica a física do pymunk
 
     def update(self, space: pymunk.Space, time_delta: float) -> None:
-        """
-        Centraliza: atualização de estado, processamento do dash e passo
-        de física. As salas não precisam mais duplicar esse bloco.
-        """
+        
         self._atualizar_estado()
         if self.dashing:
             self._processar_dash(time_delta)
         space.step(1 / 60)
 
     def _atualizar_estado(self) -> None:
-        """Deriva Idle/Walking da velocidade atual."""
+        
         vx, vy = self.body.velocity
         if vx == 0 and vy == 0:
             self.estado = "Idle"
@@ -92,7 +86,7 @@ class Player:
             self.estado = "Walking"
 
     def _processar_dash(self, time_delta: float) -> None:
-        """Executa o easing do dash e encerra quando concluído."""
+        
         progresso = pytweening.easeOutQuart(self.dash_t)
         new_x = (self.dash_inicial
                  + (self.dash_final - self.dash_inicial) * progresso)
@@ -103,9 +97,7 @@ class Player:
             self.dash_t  = 1.0
             self.dashing = False
 
-    # ------------------------------------------------------------------
-    # Ações do player
-    # ------------------------------------------------------------------
+   #acoees do player
 
     def pular(self) -> None:
         if self.body.velocity.y == 0:
@@ -132,9 +124,6 @@ class Player:
     def levar_dano(self, quantidade: int = 1) -> None:
         self.life -= quantidade
 
-    # ------------------------------------------------------------------
-    # Animação
-    # ------------------------------------------------------------------
 
     def atualizar_animacao(self) -> None:
         self.idle_cooldown += 1
@@ -152,10 +141,7 @@ class Player:
         elif self.estado == "Walking":
             self.image = self.animations["Walking"][self.frame_walking]
 
-    # ------------------------------------------------------------------
-    # Renderização
-    # ------------------------------------------------------------------
-
+  
     def draw(self, screen: pygame.Surface, pos_x: int, pos_y: int,
              efeitos_fase1: bool = False) -> None:
         imagem = self.image
