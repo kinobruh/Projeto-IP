@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 import random
 from enum import Enum
@@ -42,9 +41,8 @@ class Game:
         enemy_sprite: pygame.Surface,
         bullet_sprite: pygame.Surface,
         fase1_sprites: dict,
-        fase1_textos: dict,
         sala_geral_sprites: dict,
-        sala_geral_textos: dict,
+        font: pygame.font.Font,
         E_gui: pygame.Surface,
         sons: dict,
     ) -> None:
@@ -69,9 +67,9 @@ class Game:
         self._chao_atual = self._chao_fase1
 
         # Salas
-        self.fase1      = Fase1(sala1_surface, fase1_sprites, fase1_textos)
+        self.fase1      = Fase1(sala1_surface, fase1_sprites, font)
         self.sala_geral = SalaGeral(sala_geral_surface, sala_geral_sprites,
-                                    sala_geral_textos)
+                                    font)
         self.sala2      = Sala2(sala3_surface, enemy_sprite, bullet_sprite)
         self.sala3      = Sala3(sala3_surface, serra_sprite)
 
@@ -321,7 +319,10 @@ class Game:
             self.pos_y = int(self.player.body.position.y - 235)
 
         elif self.state == GameState.SALAGERAL:
-            px, py = self.sala_geral.draw(screen, self.player)
+            click_sfx = self.audio.get("click")
+            px, py = self.sala_geral.draw(screen, self.player,
+                                          click_sfx=click_sfx,
+                                          volume_sfx=click_sfx_volume)
             if px is not None:
                 self.pos_x, self.pos_y = px, py
 

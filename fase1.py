@@ -25,6 +25,43 @@ _FALAS = [
 
 _ENTER_FALAS = {0, 1, 2, 5, 11}
 
+def _criar_textos_tutorial(font: pygame.font.Font) -> dict[str, pygame.Surface]:
+    """Renderiza todos os textos do tutorial da Fase1 a partir da fonte."""
+    slash_name = font.render("Slash", False, (235, 52, 116))
+    slash_name = pygame.transform.scale_by(slash_name, 1.5)
+
+    hack_name = font.render("Hack", False, (235, 52, 116))
+    hack_name = pygame.transform.scale_by(hack_name, 1.5)
+
+    aperte_enter = font.render("Aperte ENTER para continuar", False, (100, 100, 100))
+    aperte_enter = pygame.transform.scale_by(aperte_enter, 0.8)
+
+    return {
+        "slash_name":   slash_name,
+        "hack_name":    hack_name,
+        "aperte_enter": aperte_enter,
+
+        "Tutorial_Fala0":   font.render("Voce nao podia ter invadido o predio de um jeito menos", False, "White"),
+        "Tutorial_Fala0_1": font.render("escandaloso?!", False, "White"),
+        "Tutorial_Fala1":   font.render("E de que outro jeito eu entraria?", False, "White"),
+        "Tutorial_Fala2":   font.render("Argh, deixa isso pra la.", False, "White"),
+        "Tutorial_Fala3":   font.render("Enfim, deixa eu te explicar como vai ser essa missao.", False, "White"),
+        "Tutorial_Fala4":   font.render('Voce pode usar "WASD" para se mover e Espaco para pular.', False, "White"),
+        "Tutorial_Fala5":   font.render('Clique com o Mouse para realizar um ataque usando Slash.', False, "White"),
+        "Tutorial_Fala6":   font.render('Segure "Shift" para correr e pressione "C" para dar um', False, "White"),
+        "Tutorial_Fala6_1": font.render('avanco rapido.', False, "White"),
+        "Tutorial_Fala7":   font.render('Alem disso, Hack possui a habilidade de se', False, "White"),
+        "Tutorial_Fala7_1": font.render('teletransportar.', False, "White"),
+        "Tutorial_Fala8":   font.render('Para criar um ponto de teleporte, aperte "X". apertando', False, "White"),
+        "Tutorial_Fala8_1": font.render('novamente Hack consome o ponto de teleporte atual e', False, "White"),
+        "Tutorial_Fala8_2": font.render('se teletransporta ate ele.', False, "White"),
+        "Tutorial_Fala9":   font.render('Seu objetivo e invadir o escritorio do CEO da Cyber Corp.', False, "White"),
+        "Tutorial_Fala9_1": font.render('e mata-lo.', False, "White"),
+        "Tutorial_Fala10":  font.render('Acho que isso e tudo, pronta?', False, "White"),
+        "Tutorial_Fala11":  font.render("Pronta.", False, "White"),
+        "Tutorial_Fala12":  font.render('Boa sorte.', False, "White"),
+    }
+
 _POSICOES_INICIAIS_CARROS = [
     ("carro_direita",  600, 200,  1, True),
     ("carro_direita",  400, 250,  1, True),
@@ -46,10 +83,12 @@ class Fase1(SalaBase):
     _X_PORTA = 1000
 
     def __init__(self, superficie: pygame.Surface,
-                 sprites: dict, textos: dict) -> None:
+                 sprites: dict, font: pygame.font.Font) -> None:
         super().__init__(superficie)
         self.sprites = sprites
-        self.textos  = textos
+        # Textos do tutorial agora são gerados aqui dentro, a partir da fonte,
+        # em vez de virem prontos do main.py.
+        self.textos  = _criar_textos_tutorial(font)
 
         self.range_da_porta  = False
         self.tutorial_acabou = False

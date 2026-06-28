@@ -53,7 +53,6 @@ def saturar(surface, fator):
             r2, g2, b2 = colorsys.hsv_to_rgb(h, s, v)
             result.set_at((x, y), (int(r2*255), int(g2*255), int(b2*255), a))
     return result
-
 #endregion
 
 #region Paths
@@ -68,6 +67,8 @@ FONTS = BASE_DIR / "fonts"
 #endregion
 
 #region Pygame Essentials
+
+#init
 pygame.init()
 
     #region Tab Config
@@ -98,7 +99,7 @@ class GameState(Enum):
     JOGANDO = 4
 #endregion
 
-#region Sprites/Sounds/Maps/GUI
+#region Sprites/Sounds/GUI
 
 #region Sprites
 
@@ -180,30 +181,28 @@ dash_sfx2 = pygame.mixer.Sound(SFX / "dash.mp3")
 
 #endregion
 
-#region Maps
-
-#endregion
-
 #region GUI
+#Menu GUI
 menu_logo = pygame.image.load(GUI / "menu_logo_ui.png")
 menu_logo = pygame.transform.scale_by(menu_logo, 1)
-large_button_ui = pygame.image.load(GUI / "black_large_button_ui.png")
-square_ui = pygame.image.load(GUI / "square_ui.png")
 
+#Buttons GUI
+large_button_ui = pygame.image.load(GUI / "black_large_button_ui.png")
 medium_button_ui = pygame.image.load(GUI / "black_medium_button_ui.png")
+
+E_gui = pygame.image.load(GUI / "interact_ui.png")
+square_ui = pygame.image.load(GUI / "square_ui.png")
 
 #Black Overlay do pause
 black_overlay = pygame.Surface((LARGURA, ALTURA))
 black_overlay.fill('Black')
 black_overlay.set_alpha(175)
 
-E_gui = pygame.image.load(GUI / "interact_ui.png")
-todas_chaves = False
-
 #Física da Logo mexendo
 logo_yt = 0
 logo_yvel = 0.005
 logo_y = 75
+#endregion
 #endregion
 
 #region GUI's
@@ -254,11 +253,13 @@ no_x = 1280 - yes_x
 yes_no_button_y = 375
 yes_button =    pygame_gui.elements.UIButton(relative_rect=pygame.Rect((yes_x, yes_no_button_y), (medium_button_width, large_button_height)), text="", manager=manager, object_id="#yes_button")
 no_button =     pygame_gui.elements.UIButton(relative_rect=pygame.Rect((no_x - medium_button_width, yes_no_button_y), (medium_button_width, large_button_height)), text="", manager=manager, object_id="#no_button")
+    #endregion
 
     #region Pause GUI
 continue_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(((LARGURA // 2) - (medium_button_width // 2), 260), (medium_button_width, large_button_height)), text="", manager=manager, object_id="#continue_button")
 options2_button = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(((LARGURA // 2) - (medium_button_width // 2), 335), (medium_button_width, large_button_height)), text="", manager=manager, object_id="#continue_button")
 menu_button     = pygame_gui.elements.UIButton(relative_rect=pygame.Rect(((LARGURA // 2) - (medium_button_width // 2), 410), (medium_button_width, large_button_height)), text="", manager=manager, object_id="#menu_button")
+    #endregion
 
 life_bar_3_3 = pygame.image.load(SPRITES / "life_bar3.png")
 life_bar_3_3 = pygame.transform.scale_by(life_bar_3_3, 2)
@@ -282,6 +283,7 @@ BG = (0, 0, 0)
 BLACK = (0, 0, 0)
 #endregion
 
+#sets iniciais
 game_state = GameState.MENU
 
 pygame.mixer.music.load(menu_music)
@@ -295,8 +297,9 @@ animations = {
 }
 
 was_in_game = False
+chaves_inv = 0
+todas_chaves = False
 sala_anterior_options = GameState.JOGANDO
-
 
 #endregion
 
@@ -325,32 +328,6 @@ yes_text = font.render("Sim", True, "White")
 no_text = font.render("Nao", True, "White")
 exit_game_text = font.render("Sair do jogo?", True, "White")
 
-aperte_enter = font.render("Aperte ENTER para continuar", False, (100, 100, 100))
-Slash_name = font.render("Slash", False, (235, 52, 116))
-Hack_name = font.render("Hack", False, (235, 52, 116))
-Tutorial_Fala0 = font.render("Voce nao podia ter invadido o predio de um jeito menos", False, "White")
-Tutorial_Fala0_1 = font.render("escandaloso?!", False, "White")
-Tutorial_Fala1 = font.render("E de que outro jeito eu entraria?", False, "White")
-Tutorial_Fala2 = font.render("Argh, deixa isso pra la.", False, "White")
-Tutorial_Fala3 = font.render("Enfim, deixa eu te explicar como vai ser essa missao.", False, "White")
-Tutorial_Fala4 = font.render('Voce pode usar "WASD" para se mover e Espaco para pular.', False, "White")
-Tutorial_Fala6 = font.render('Segure "Shift" para correr e pressione "C" para dar um', False, "White")
-Tutorial_Fala6_1 = font.render('avanco rapido.', False, "White")
-Tutorial_Fala5 = font.render('Clique com o Mouse para realizar um ataque usando Slash.', False, "White")
-Tutorial_Fala7 = font.render('Alem disso, Hack possui a habilidade de se', False, "White")
-Tutorial_Fala7_1 = font.render('teletransportar.', False, "White")
-Tutorial_Fala8 = font.render('Para criar um ponto de teleporte, aperte "X". apertando', False, "White")
-Tutorial_Fala8_1 = font.render('novamente Hack consome o ponto de teleporte atual e', False, "White")
-Tutorial_Fala8_2 = font.render('se teletransporta ate ele.', False, "White")
-Tutorial_Fala9 = font.render('Seu objetivo e invadir o escritorio do CEO da Cyber Corp.', False, "White")
-Tutorial_Fala9_1 = font.render('e mata-lo.', False, "White")
-Tutorial_Fala10 = font.render('Acho que isso e tudo, pronta?', False, "White")
-Tutorial_Fala11 = font.render("Pronta.", False, "White")
-Tutorial_Fala12 = font.render('Boa sorte.', False, "White")
-aperte_enter = pygame.transform.scale_by(aperte_enter, 0.8)
-Slash_name = pygame.transform.scale_by(Slash_name, 1.5)
-Hack_name = pygame.transform.scale_by(Hack_name, 1.5)
-
 fase1_sprites = {
     "slash_neutro":   slash_neutro,
     "slash_side_eye": slash_side_eye,
@@ -364,45 +341,10 @@ fase1_sprites = {
     "life_bar_2":     life_bar_2_3,
     "life_bar_1":     life_bar_1_3,
 }
-fase1_textos = {
-    "slash_name":      Slash_name,
-    "hack_name":       Hack_name,
-    "aperte_enter":    aperte_enter,
-    "Tutorial_Fala0":  Tutorial_Fala0,   "Tutorial_Fala0_1": Tutorial_Fala0_1,
-    "Tutorial_Fala1":  Tutorial_Fala1,
-    "Tutorial_Fala2":  Tutorial_Fala2,
-    "Tutorial_Fala3":  Tutorial_Fala3,
-    "Tutorial_Fala4":  Tutorial_Fala4,
-    "Tutorial_Fala5":  Tutorial_Fala5,
-    "Tutorial_Fala6":  Tutorial_Fala6,   "Tutorial_Fala6_1": Tutorial_Fala6_1,
-    "Tutorial_Fala7":  Tutorial_Fala7,   "Tutorial_Fala7_1": Tutorial_Fala7_1,
-    "Tutorial_Fala8":  Tutorial_Fala8,   "Tutorial_Fala8_1": Tutorial_Fala8_1,  "Tutorial_Fala8_2": Tutorial_Fala8_2,
-    "Tutorial_Fala9":  Tutorial_Fala9,   "Tutorial_Fala9_1": Tutorial_Fala9_1,
-    "Tutorial_Fala10": Tutorial_Fala10,
-    "Tutorial_Fala11": Tutorial_Fala11,
-    "Tutorial_Fala12": Tutorial_Fala12,
-}
+
 sala_geral_sprites = {
     "slash_neutro": slash_neutro,
     "E_gui":         E_gui,
-}
-
-Cutscene_Fala1 = font.render('Aquela deve ser a porta do escritorio do chefe.', False, "White")
-Cutscene_Fala2 = font.render('Vamos checar.', False, "White")
-
-Porta_Fala1 = font.render('Tem 3 leitores aqui.', False, "White")
-Porta_Fala2 = font.render('Parece que voce vai precisar de 3 chaves de acesso', False, "White")
-Porta_Fala2_1 = font.render('pra conseguir abrir a porta.', False, "White")
-Porta_Fala3 = font.render('Vamos checar as outras salas.', False, "White")
-
-sala_geral_textos = {
-    "slash_name":     Slash_name,
-    "cutscene_fala1": Cutscene_Fala1,
-    "cutscene_fala2": Cutscene_Fala2,
-    "porta_fala1":    Porta_Fala1,
-    "porta_fala2":    Porta_Fala2,
-    "porta_fala2_1":  Porta_Fala2_1,
-    "porta_fala3":    Porta_Fala3,
 }
 
 game_sons = {
@@ -418,8 +360,9 @@ game = Game(
     animations,
     sala1_surface, sala_geral, sala3,
     serra_sprite, enemy_sprite, bullet_sprite,
-    fase1_sprites, fase1_textos,
-    sala_geral_sprites, sala_geral_textos,
+    fase1_sprites,
+    sala_geral_sprites,
+    font,
     E_gui,
     game_sons,
 )
@@ -567,6 +510,7 @@ while run_game:
 
     #region GameState Options
     elif game_state == GameState.OPTIONS:
+
         transicao_opacity = 0
         screen.fill(BG)
         screen.blit(predios, (0, 0))
@@ -600,6 +544,7 @@ while run_game:
 
     #region Gamestate Exit
     elif game_state == GameState.EXIT:
+
         transicao_opacity = 0
         screen.fill(BG)
         screen.blit(predios, (0, 0))
@@ -625,6 +570,7 @@ while run_game:
         #endregion
 
     elif game_state == GameState.JOGANDO:
+        
         #region show/hide
         play_button.hide()
         options_button.hide()
