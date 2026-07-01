@@ -4,6 +4,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import pygame
+import math
 
 
 class SalaBase(ABC):
@@ -64,13 +65,47 @@ class SalaBase(ABC):
 
     def checar_saida(self, player_x: float, screen: pygame.Surface,
                      E_gui: pygame.Surface) -> None:
-       #verifica se o player está na área de saída da sala e desenha o ícone "E" na tela.
         if player_x < 400:
             screen.blit(E_gui, (140, 275))
             self.range_volta = True
         else:
             self.range_volta = False
 
+        if player_x > self.CLAMP_MAX_X - 250 and not getattr(self, 'pegou_chave', False):
+            screen.blit(E_gui, (1000, 275)) 
+            self.range_chave = True
+        else:
+            self.range_chave = False
+
+        #verifica se o player está perto da chave 
+        if player_x > self.CLAMP_MAX_X - 250 and getattr(self, 'pegou_chave', False) == False:
+            screen.blit(E_gui, (1000, 275)) # Mostra o "E" lá no final
+            self.range_chave = True
+        else:
+            self.range_chave = False
+
     def reset(self) -> None:
        #Reseta estado da sala. Subclasses devem chamar super().reset().
         self.range_volta = False
+        
+        #reseta a chave
+        self.range_chave = False
+        self.pegou_chave = False
+    #chaves
+    def desenhar_chave(self, screen: pygame.Surface, sprite_chave: pygame.Surface, camera_x: int) -> None:
+        #apareece se ainda não tiver pego a chave
+        if getattr(self, 'pegou_chave', False) == False:
+            
+            #chave perto do final do mapa e ajusta com a câmera
+            x_tela = (self.CLAMP_MAX_X - 237) - camera_x
+            # para centralizar
+            #tá embaxio do E
+           
+           #ficar flutuando
+            tempo = pygame.time.get_ticks() / 250.0  # Velocidade aumentar deixa mais lento
+            flutuacao = math.sin(tempo) * 15.0       # Altura
+            
+            #altura base mais a altura da flutuação
+            y_tela = 327 + flutuacao 
+            
+            screen.blit(sprite_chave, (x_tela, y_tela))

@@ -103,6 +103,10 @@ class GameState(Enum):
 
 #region Sprites
 
+#chave
+chave_sprite = pygame.image.load(SPRITES / "chave.png").convert_alpha()
+chave_sprite = pygame.transform.scale(chave_sprite, (105, 105))
+
 #Cenários
 predios = pygame.image.load(SPRITES / "predios.png")
 predios = pygame.transform.scale_by(predios, 2.25)
@@ -344,7 +348,8 @@ fase1_sprites = {
 
 sala_geral_sprites = {
     "slash_neutro": slash_neutro,
-    "E_gui":         E_gui,
+    "E_gui":        E_gui,
+    "chave":        chave_sprite, 
 }
 
 game_sons = {

@@ -83,6 +83,7 @@ class Game:
         self._entrou_na_sala2      = False
         self._entrou_na_sala3      = False
         self._trocou_para_sala_geral = False
+        self.chaves_coletadas = {"sala1": False, "sala2": False, "sala3": False}
 
         self.pos_x = 0
         self.pos_y = 0
@@ -156,21 +157,36 @@ class Game:
                 self.sala_geral.range_porta1 = False
                 self.sala1.range_volta = False
 
-        elif s == GameState.SALA3 and self.sala3.range_volta:
-            self._voltar_para_sala_geral(SPAWN_VOLTA_SALA3, volume_sons, volume_geral)
-            self.sala3.range_volta = False
-            self.sala_geral.range_porta3 = False
+        elif s == GameState.SALA3:
+            if self.sala3.range_volta:
+                self._voltar_para_sala_geral(SPAWN_VOLTA_SALA3, volume_sons, volume_geral)
+                self.sala3.range_volta = False
+                self.sala_geral.range_porta3 = False
+            elif self.sala3.range_chave:
+                self.sala3.pegou_chave = True
+                self.chaves_coletadas["sala3"] = True
+                self.audio.tocar("click", volume_sons, volume_geral)
+               
 
-        elif s == GameState.SALA2 and self.sala2.range_volta:
-            self._voltar_para_sala_geral(SPAWN_VOLTA_SALA2, volume_sons, volume_geral)
-            self.sala2.range_volta = False
-            self.sala_geral.range_porta2 = False
+        elif s == GameState.SALA2:
+            if self.sala2.range_volta:
+                self._voltar_para_sala_geral(SPAWN_VOLTA_SALA2, volume_sons, volume_geral)
+                self.sala2.range_volta = False
+                self.sala_geral.range_porta2 = False
+            elif self.sala2.range_chave:
+                self.sala2.pegou_chave = True
+                self.chaves_coletadas["sala2"] = True
+                self.audio.tocar("click", volume_sons, volume_geral)
 
-        elif s == GameState.SALA1 and self.sala1.range_volta:
-            self._voltar_para_sala_geral(SPAWN_VOLTA_SALA1, volume_sons, volume_geral)
-            self.sala1.range_volta = False
-            self.sala_geral.range_porta1 = False
-
+        elif s == GameState.SALA1:
+            if self.sala1.range_volta:
+                self._voltar_para_sala_geral(SPAWN_VOLTA_SALA1, volume_sons, volume_geral)
+                self.sala1.range_volta = False
+                self.sala_geral.range_porta1 = False
+            elif self.sala1.range_chave:
+                self.sala1.pegou_chave = True
+                self.chaves_coletadas["sala1"] = True
+                self.audio.tocar("click", volume_sons, volume_geral)
     def _entrar_sala(self, novo_estado: GameState):
         self.state = novo_estado
         self.player.virado = True
@@ -333,18 +349,21 @@ class Game:
             camera_x = self.sala3.calcular_camera(self.player.body.position.x)
             self.pos_x, self.pos_y = self.sala3.calcular_pos_player(self.player.body.position.x, self.player.body.position.y, camera_x)
             self.sala3.draw(screen, self.player, camera_x, self.pos_x, self.pos_y, 0)
+            self.sala3.desenhar_chave(screen, self.sala_geral.sprites["chave"], camera_x)
             self.sala3.checar_saida(self.player.body.position.x, screen, self.E_gui)
 
         elif self.state == GameState.SALA2:
             camera_x = self.sala2.calcular_camera(self.player.body.position.x)
             self.pos_x, self.pos_y = self.sala2.calcular_pos_player(self.player.body.position.x, self.player.body.position.y, camera_x)
             self.sala2.draw(screen, self.player, camera_x, self.pos_x, self.pos_y, 0)
+            self.sala2.desenhar_chave(screen, self.sala_geral.sprites["chave"], camera_x)
             self.sala2.checar_saida(self.player.body.position.x, screen, self.E_gui)
 
         elif self.state == GameState.SALA1:
             camera_x = self.sala1.calcular_camera(self.player.body.position.x)
             self.pos_x, self.pos_y = self.sala1.calcular_pos_player(self.player.body.position.x, self.player.body.position.y, camera_x)
             self.sala1.draw(screen, self.player, camera_x, self.pos_x, self.pos_y, 0)
+            self.sala1.desenhar_chave(screen, self.sala_geral.sprites["chave"], camera_x)
             self.sala1.checar_saida(self.player.body.position.x, screen, self.E_gui)
 
         return self.pos_x, self.pos_y
