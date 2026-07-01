@@ -26,6 +26,8 @@ class SalaGeral(SalaBase):
     X_PORTA3_MAX = 2100
     X_PORTA2_MIN = 1100
     X_PORTA2_MAX = 1500
+    X_PORTA1_MIN = 500
+    X_PORTA1_MAX = 900
 
     DURACAO_CUTSCENE   = 300
     DURACAO_FALA_PORTA = 300
@@ -38,6 +40,7 @@ class SalaGeral(SalaBase):
         self.range_porta_saida = False
         self.range_porta3      = False
         self.range_porta2      = False
+        self.range_porta1      = False
         self.todas_chaves      = False
         self.checou_porta      = False
 
@@ -68,12 +71,16 @@ class SalaGeral(SalaBase):
 
     def tentar_porta2(self):
         return self.range_porta2 and not self.todas_chaves and self.checou_porta
+    
+    def tentar_porta1(self):
+        return self.range_porta1 and not self.todas_chaves and self.checou_porta
 
     def reset(self):
         super().reset()
         self.range_porta_saida = False
         self.range_porta3      = False
         self.range_porta2      = False
+        self.range.porta1      = False
         self.todas_chaves      = False
         self.checou_porta      = False
         self.em_cutscene             = True
@@ -138,6 +145,7 @@ class SalaGeral(SalaBase):
         self.range_porta_saida = player_x > self.X_SAIDA
         self.range_porta3 = self.X_PORTA3_MIN < player_x < self.X_PORTA3_MAX
         self.range_porta2 = self.X_PORTA2_MIN <= player_x <= self.X_PORTA2_MAX
+        self.range_porta1 = self.X_PORTA1_MIN <= player_x <= self.X_PORTA1_MAX
         self.range_volta  = self.range_porta_saida
 
     def _desenhar_cutscene(self, screen: pygame.Surface, click_sfx=None, volume_sfx: float = 1.0):

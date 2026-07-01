@@ -10,6 +10,7 @@ from fase1 import Fase1
 from sala_geral import SalaGeral
 from sala2 import Sala2
 from sala3 import Sala3
+from sala1 import Sala1
 from audio_manager import AudioManager
 
 
@@ -18,6 +19,7 @@ class GameState(Enum):
     SALAGERAL = 2
     SALA2     = 3
     SALA3     = 4
+    SALA1     = 5
 
 
 SPAWN_FASE1  = (250, 430)
@@ -25,13 +27,13 @@ SPAWN_PADRAO = (250, 455)
 
 SPAWN_VOLTA_SALA3 = (1900, 455)
 SPAWN_VOLTA_SALA2 = (1300, 455)
-
+SPAWN_VOLTA_SALA1 = (700, 455)
 
 class Game:
     def __init__(
         self,
         animations: dict,
-        sala1_surface: pygame.Surface,
+        fase1_surface: pygame.Surface,
         sala_geral_surface: pygame.Surface,
         sala3_surface: pygame.Surface,
         serra_sprite: pygame.Surface,
@@ -59,22 +61,25 @@ class Game:
         self._chao_sala_geral = self._criar_chao((0, 620), 2560)
         self._chao_sala3      = self._criar_chao((0, 620), sala3_surface.get_width())
         self._chao_sala2      = self._criar_chao((0, 620), sala3_surface.get_width())
+        self._chao_sala1      = self._criar_chao((0, 620), sala3_surface.get_width())
 
         self.space.add(*self._chao_fase1)
         self._chao_atual = self._chao_fase1
 
         #Salas
-        self.fase1      = Fase1(sala1_surface, fase1_sprites, font)
+        self.fase1      = Fase1(fase1_surface, fase1_sprites, font)
         self.sala_geral = SalaGeral(sala_geral_surface, sala_geral_sprites,
                                     font)
         self.sala2      = Sala2(sala3_surface, enemy_sprite, bullet_sprite)
         self.sala3      = Sala3(sala3_surface, serra_sprite)
+        self.sala1      = Sala1(sala3_surface)
 
         #Estado
         self.state   = GameState.FASE1
         self.pausado = False
 
         self._entrou_na_sala_geral = False
+        self._entrou_na_sala1      = False
         self._entrou_na_sala2      = False
         self._entrou_na_sala3      = False
         self._trocou_para_sala_geral = False
@@ -146,10 +151,13 @@ class Game:
                 self._entrar_sala(GameState.SALA2)
                 self.sala_geral.range_porta2 = False
                 self.sala2.range_volta = False
+            elif self.sala_geral.tentar_porta1():
+                self._entrar_sala(GameState.SALA1)
+                self.sala_geral.range_porta1 = False
+                self.sala1.range_volta = False
 
         elif s == GameState.SALA3 and self.sala3.range_volta:
-            self._voltar_para_sala_geral(SPAWN_VOLTA_SALA3,
-                                          volume_sons, volume_geral)
+            self._voltar_para_sala_geral(SPAWN_VOLTA_SALA3, volume_sons, volume_geral)
             self.sala3.range_volta = False
             self.sala_geral.range_porta3 = False
 
@@ -157,6 +165,11 @@ class Game:
             self._voltar_para_sala_geral(SPAWN_VOLTA_SALA2, volume_sons, volume_geral)
             self.sala2.range_volta = False
             self.sala_geral.range_porta2 = False
+
+        elif s == GameState.SALA1 and self.sala1.range_volta:
+            self._voltar_para_sala_geral(SPAWN_VOLTA_SALA1, volume_sons, volume_geral)
+            self.sala1.range_volta = False
+            self.sala_geral.range_porta1 = False
 
     def _entrar_sala(self, novo_estado: GameState):
         self.state = novo_estado
@@ -167,6 +180,8 @@ class Game:
             self._entrou_na_sala2 = True
         elif novo_estado == GameState.SALA3:
             self._entrou_na_sala3 = True
+        elif novo_estado == GameState.SALA1:
+            self._entrou_na_sala1 = True
 
     def _voltar_para_sala_geral(self, spawn_pos: tuple, volume_sons: float, volume_geral: float):
         self.audio.tocar("open_door", volume_sons, volume_geral)
@@ -186,7 +201,6 @@ class Game:
         else:
             self.player.body.velocity = (self.player.body.velocity.x * 0.7, self.player.body.velocity.y)
 
-
     def update(self, time_delta: float, volume_sons: float = 1.0, volume_geral: float = 1.0):
         keys = pygame.key.get_pressed()
 
@@ -198,6 +212,8 @@ class Game:
             self._update_sala3(time_delta, volume_sons, volume_geral, keys)
         elif self.state == GameState.SALA2:
             self._update_sala2(time_delta, volume_sons, volume_geral, keys)
+        elif self.state == GameState.SALA1:
+            self._update_sala1(time_delta, volume_sons, volume_geral, keys)
 
         if self.transicao_opacity > 0:
             self.transicao_opacity -= 5
@@ -279,6 +295,27 @@ class Game:
         self.player.atualizar_animacao()
         self._mover(keys)
 
+    def _update_sala1(self, time_delta, volume_sons, volume_geral, keys):
+        if self._entrou_na_sala1:
+            self._entrou_na_sala1 = False
+            self.audio.tocar("open_door", volume_sons, volume_geral)
+            self.player.body.position = SPAWN_PADRAO
+            self._trocar_chao(self._chao_sala1)
+            self.transicao_opacity = 255
+
+        volume_sfx = 0.40 * volume_sons * volume_geral
+        self.sala1.update(time_delta, self.player, self.space, volume_sfx)
+
+        camera_x     = self.sala1.calcular_camera(self.player.body.position.x)
+        pos_x, pos_y = self.sala1.calcular_pos_player(self.player.body.position.x, self.player.body.position.y, camera_x)
+        player_hitbox = pygame.Rect(pos_x + 50, pos_y + 60, 70, 200)
+
+        damage_sfx  = self.audio.get("damage")
+        vol_damage  = 0.80 * volume_sons * volume_geral
+
+        self.player.atualizar_animacao()
+        self._mover(keys)
+
     def draw(self, screen: pygame.Surface,
              click_sfx_volume: float = 1.0):
         if self.state == GameState.FASE1:
@@ -300,10 +337,15 @@ class Game:
 
         elif self.state == GameState.SALA2:
             camera_x = self.sala2.calcular_camera(self.player.body.position.x)
-            self.pos_x, self.pos_y = self.sala2.calcular_pos_player(
-                self.player.body.position.x, self.player.body.position.y, camera_x)
+            self.pos_x, self.pos_y = self.sala2.calcular_pos_player(self.player.body.position.x, self.player.body.position.y, camera_x)
             self.sala2.draw(screen, self.player, camera_x, self.pos_x, self.pos_y, 0)
             self.sala2.checar_saida(self.player.body.position.x, screen, self.E_gui)
+
+        elif self.state == GameState.SALA1:
+            camera_x = self.sala1.calcular_camera(self.player.body.position.x)
+            self.pos_x, self.pos_y = self.sala1.calcular_pos_player(self.player.body.position.x, self.player.body.position.y, camera_x)
+            self.sala1.draw(screen, self.player, camera_x, self.pos_x, self.pos_y, 0)
+            self.sala1.checar_saida(self.player.body.position.x, screen, self.E_gui)
 
         return self.pos_x, self.pos_y
 
@@ -323,5 +365,6 @@ class Game:
         self._entrou_na_sala_geral   = False
         self._entrou_na_sala2        = False
         self._entrou_na_sala3        = False
+        self._entrou_na_sala1        = False
         self._trocou_para_sala_geral = False
         self.transicao_opacity       = 255

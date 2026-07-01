@@ -61,7 +61,6 @@ class Player:
         # Efeito visual (fase 1)
         self.shadow_opacity = 0
 
-
     #usa o @property para criar um método que pode ser acessado como um atributo
     #ai pode verificar se o player está vivo com base na quantidade de vida restante
     @property
@@ -165,6 +164,7 @@ class Player:
 
         if self.virado:
             imagem = pygame.transform.flip(imagem, True, False)
+            print(self.body.position.x)
 
         screen.blit(imagem, (pos_x, pos_y))
 
