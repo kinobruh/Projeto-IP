@@ -7,8 +7,7 @@ import pytweening
 class Bullet:
     #bala disparada
 
-    def __init__(self, x: float, y: float, direcao: int,
-                 sprite: pygame.Surface, velocidade: float = 650) -> None:
+    def __init__(self, x: float, y: float, direcao: int, sprite: pygame.Surface, velocidade: float = 650):
         self.x          = x
         self.y          = y
         self.direcao    = direcao
@@ -18,13 +17,12 @@ class Bullet:
         self.sprite_original = sprite
         self.largura = sprite.get_width()
         self.altura  = sprite.get_height()
-        self.sprite  = (pygame.transform.flip(sprite, True, False)
-                        if direcao < 0 else sprite)
+        self.sprite  = (pygame.transform.flip(sprite, True, False) if direcao < 0 else sprite)
 
-    def update(self, time_delta: float) -> None:
+    def update(self, time_delta: float):
         self.x += self.velocidade * self.direcao * time_delta
 
-    def get_rect(self, camera_x: float = 0) -> pygame.Rect:
+    def get_rect(self, camera_x: float = 0):
         return pygame.Rect(
             self.x - camera_x - self.largura // 2,
             self.y - self.altura // 2,
@@ -32,7 +30,7 @@ class Bullet:
             self.altura,
         )
 
-    def draw(self, screen: pygame.Surface, camera_x: float = 0) -> None:
+    def draw(self, screen: pygame.Surface, camera_x: float = 0):
         screen.blit(self.sprite, self.get_rect(camera_x).topleft)
 
 
@@ -56,7 +54,7 @@ class Enemy:
         velocidade_flutuacao: float = 1.6,
         distancia_recoil: float = 22,
         duracao_recoil: float = 0.18,
-    ) -> None:
+    ):
         self.x = x
         self.y = y
         self.patrulha_min = patrulha_min
@@ -71,7 +69,7 @@ class Enemy:
         self.ALTURA:  int = sprite.get_height()
         self.bullet_sprite = bullet_sprite
 
-        # Estado
+        #Estado
         self.direcao_patrulha = 1
         self.virado           = True
         self.estado           = "patrulhando"
@@ -80,27 +78,24 @@ class Enemy:
         self.life             = 3
         self.bullets: list[Bullet] = []
 
-        # Alerta antes do primeiro tiro
         self.tempo_alerta     = 0.0
         self.tempo_alerta_max = 0.08
 
-        # Flutuação
+        #Flutuação
         self.altura_flutuacao    = altura_flutuacao
         self.amplitude_flutuacao = amplitude_flutuacao
         self.velocidade_flutuacao = velocidade_flutuacao
         self.flutuacao_t         = random.uniform(0, 2.0)
         self.flutuacao_offset    = 0.0
 
-        # Recoil ao disparar
+        #Recoil ao disparar
         self.distancia_recoil = distancia_recoil
         self.duracao_recoil   = duracao_recoil
         self.em_recoil        = False
         self.recoil_t         = 0.0
         self.recoil_offset    = 0.0
 
-    def update(self, time_delta: float, player_x: float, player_y: float,
-               sfx_tiro: pygame.mixer.Sound | None = None,
-               volume_sfx: float = 1.0) -> None:
+    def update(self, time_delta: float, player_x: float, player_y: float, sfx_tiro: pygame.mixer.Sound | None = None, volume_sfx: float = 1.0):
         if not self.vivo:
             return
 
@@ -121,7 +116,7 @@ class Enemy:
             if abs(b.x - self.x) < self.alcance_visao + 400
         ]
 
-    def _ve_o_player(self, player_x: float, player_y: float) -> bool:
+    def _ve_o_player(self, player_x: float, player_y: float):
         dist_y = abs(player_y - self.y)
         if dist_y > self.tolerancia_y:
             return False
@@ -141,8 +136,6 @@ class Enemy:
                 if self.tiro_timer >= self.cooldown_tiro:
                     self.tiro_timer = 0.0
                     self._disparar(sfx_tiro, volume_sfx)
-
- 
 
     def _patrulhar(self, time_delta: float) -> None:
         self.x += self.velocidade_patrulha * self.direcao_patrulha * time_delta

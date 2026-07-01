@@ -1,11 +1,8 @@
-#herda as caracteristicas da classe sala base
-#sala1 não tá feita
 from __future__ import annotations
 import random
 import pygame
 
 from sala_base import SalaBase
-
 
 _FALAS = [
     ("slash_neutro",   "slash", ["Tutorial_Fala0",   "Tutorial_Fala0_1"]),
@@ -23,16 +20,13 @@ _FALAS = [
     ("slash_neutro",   "slash", ["Tutorial_Fala12"]),
 ]
 
-_ENTER_FALAS = {0, 1, 2, 5, 11}
+ENTER_FALAS = {0, 1, 2, 5, 11}
 
-def _criar_textos_tutorial(font: pygame.font.Font) -> dict[str, pygame.Surface]:
-    """Renderiza todos os textos do tutorial da Fase1 a partir da fonte."""
+def _criar_textos_tutorial(font: pygame.font.Font):
     slash_name = font.render("Slash", False, (235, 52, 116))
     slash_name = pygame.transform.scale_by(slash_name, 1.5)
-
     hack_name = font.render("Hack", False, (235, 52, 116))
     hack_name = pygame.transform.scale_by(hack_name, 1.5)
-
     aperte_enter = font.render("Aperte ENTER para continuar", False, (100, 100, 100))
     aperte_enter = pygame.transform.scale_by(aperte_enter, 0.8)
 
@@ -62,64 +56,50 @@ def _criar_textos_tutorial(font: pygame.font.Font) -> dict[str, pygame.Surface]:
         "Tutorial_Fala12":  font.render('Boa sorte.', False, "White"),
     }
 
-_POSICOES_INICIAIS_CARROS = [
+POSICOES_INICIAIS_CARROS = [
     ("carro_direita",  600, 200,  1, True),
     ("carro_direita",  400, 250,  1, True),
     ("carro_esquerda", 800, 180, -1, True),
     ("carro_direita",  900, 220,  1, True),
     ("carro_esquerda", 300, 260, -1, False),
 ]
-
 CLAMP_MAX_X = 1230
 
-
 class Fase1(SalaBase):
-    
-
     CLAMP_MIN_X = 190
     CLAMP_MAX_X = 1230
+    X_PORTA = 1000
 
-   
-    _X_PORTA = 1000
-
-    def __init__(self, superficie: pygame.Surface,
-                 sprites: dict, font: pygame.font.Font) -> None:
+    def __init__(self, superficie: pygame.Surface, sprites: dict, font: pygame.font.Font):
         super().__init__(superficie)
         self.sprites = sprites
-        # Textos do tutorial agora são gerados aqui dentro, a partir da fonte,
-        # em vez de virem prontos do main.py.
         self.textos  = _criar_textos_tutorial(font)
-
         self.range_da_porta  = False
         self.tutorial_acabou = False
         self.fala_tutorial   = 0
-
         self._carros = self._criar_carros()
         self._vida_anterior = 3
         self.tocou_dano = False
 
-    
-    #usa o 2@staticmethod para criar um método que não depende da instância da classe
     @staticmethod
-    def _criar_carros() -> list[dict]:
+    def _criar_carros():
         carros = []
         x_min, x_max = 260, 1085
-        for sprite_key, x, y, dx, rand_y in _POSICOES_INICIAIS_CARROS:
+        for sprite_key, x, y, dx, rand_y in POSICOES_INICIAIS_CARROS:
             carros.append({
                 "sprite": sprite_key,
                 "x": x, "y": y,
                 "dx": dx,
                 "x_min": x_min, "x_max": x_max,
                 "rand_y": rand_y,
-                "_x0": x, "_y0": y,      # guarda posição inicial p/ reset
+                "_x0": x, "_y0": y,      # guarda posicao inicial pro reset
             })
         return carros
 
-
-    def avancar_tutorial(self) -> None:
+    def avancar_tutorial(self):
         self.fala_tutorial += 1
 
-    def reset(self) -> None:
+    def reset(self):
         super().reset()
         self.tutorial_acabou = False
         self.fala_tutorial   = 0
@@ -129,41 +109,29 @@ class Fase1(SalaBase):
             c["x"] = c["_x0"]
             c["y"] = c["_y0"]
 
-
-    def update(self, time_delta: float, player, space) -> None:
-        
+    def update(self, time_delta: float, player, space): 
         player.update(space, time_delta)
         self._mover_carros()
         self._verificar_porta(player)
         self._verificar_vida(player)
-
         if self.fala_tutorial >= len(_FALAS):
             self.tutorial_acabou = True
 
-    def draw(self, screen: pygame.Surface, player,
-             camera_x: int = 0, pos_x: int = 0, pos_y: int = 0) -> None:
-    
+    def draw(self, screen: pygame.Surface, player, camera_x: int = 0, pos_x: int = 0, pos_y: int = 0):
         pos_x = int(player.body.position.x - 110)
         pos_y = int(player.body.position.y - 235)
-
         screen.fill((0, 0, 0))
         screen.blit(self.superficie, (0, 10))
-
         for c in self._carros:
             screen.blit(self.sprites[c["sprite"]], (c["x"], c["y"]))
-
         player.draw(screen, pos_x, pos_y, efeitos_fase1=True)
-
         if self.range_da_porta:
             screen.blit(self.sprites["E_gui"], (1190, 275))
-
         if not self.tutorial_acabou:
             self._desenhar_tutorial(screen)
-
         self._desenhar_vida(screen, player)
 
-
-    def _mover_carros(self) -> None:
+    def _mover_carros(self):
         for c in self._carros:
             c["x"] += c["dx"]
             if c["dx"] > 0 and c["x"] > c["x_max"]:
@@ -175,39 +143,34 @@ class Fase1(SalaBase):
                 if c["rand_y"]:
                     c["y"] = random.randint(180, 295)
 
-    def _verificar_porta(self, player) -> None:
-        self.range_da_porta = (self.tutorial_acabou
-                               and player.body.position.x > self._X_PORTA)
+    def _verificar_porta(self, player):
+        if self.tutorial_acabou and player.body.position.x > self.X_PORTA:
+            self.range_da_porta = True
 
-    def _verificar_vida(self, player) -> None:
-       
+    def _verificar_vida(self, player):
         self.tocou_dano = False
         if player.life < self._vida_anterior:
             self.tocou_dano = True
         self._vida_anterior = player.life
 
-
-    def _desenhar_tutorial(self, screen: pygame.Surface) -> None:
+    def _desenhar_tutorial(self, screen: pygame.Surface):
         i = self.fala_tutorial
         if i >= len(_FALAS):
             return
-
         sprite_key, personagem, linhas = _FALAS[i]
         sp = self.sprites
         t  = self.textos
         base_x = (self.LARGURA_TELA // 2) - (sp["slash_neutro"].get_width() // 2)
         nome_y  = 530
         texto_y = 560
-
         screen.blit(sp[sprite_key], (base_x, 520))
         screen.blit(t[f"{personagem}_name"], (base_x + 150, nome_y))
         for j, chave in enumerate(linhas):
             screen.blit(t[chave], (base_x + 150, texto_y + j * 22))
-
-        if i in _ENTER_FALAS:
+        if i in ENTER_FALAS:
             screen.blit(t["aperte_enter"], (base_x + 540, 640))
 
-    def _desenhar_vida(self, screen: pygame.Surface, player) -> None:
+    def _desenhar_vida(self, screen: pygame.Surface, player):
         sp = self.sprites
         vida = player.life
         if vida >= 3:
