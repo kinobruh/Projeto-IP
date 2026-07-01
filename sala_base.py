@@ -1,15 +1,12 @@
 #Sala base: resolvi criar uma classe base para as salas, 
 # com métodos compartilhados e contrato de implementação (boa pratica e facilita  manutenção). 
 
-
-
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import pygame
 
 
 class SalaBase(ABC):
-    """Contrato e comportamentos compartilhados de todas as salas."""
 
     #resolução fixa do jogo
     LARGURA_TELA: int = 1280
@@ -35,13 +32,11 @@ class SalaBase(ABC):
 
     @abstractmethod
     def update(self, time_delta: float, player, space) -> None:
-        """Atualiza lógica da sala a cada frame."""
         ...
 
     @abstractmethod
     def draw(self, screen: pygame.Surface, player, camera_x: int,
              pos_x: int, pos_y: int) -> None:
-        """Renderiza a sala."""
         ...
 
     #metodos utilitarios compartilhados entre as salas, como calcular a posição da câmera

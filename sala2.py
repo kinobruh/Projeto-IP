@@ -10,9 +10,7 @@ class Sala2(SalaBase):
 
     CLAMP_MIN_X = 190
 
-    def __init__(self, superficie: pygame.Surface,
-                 enemy_sprite: pygame.Surface,
-                 bullet_sprite: pygame.Surface | None = None) -> None:
+    def __init__(self, superficie: pygame.Surface, enemy_sprite: pygame.Surface, bullet_sprite: pygame.Surface | None = None) -> None:
         super().__init__(superficie)
         self.CLAMP_MAX_X = self.largura - 70
 
@@ -24,10 +22,7 @@ class Sala2(SalaBase):
             bullet_sprite=bullet_sprite,
         )
 
-    #agora usa a sala base
-    def update(self, time_delta: float, player, space,
-               shoot_sfx=None, volume_sfx: float = 1.0) -> None:
-        # dash + física + estado do player em um só lugar
+    def update(self, time_delta: float, player, space, shoot_sfx=None, volume_sfx: float = 1.0):
         player.update(space, time_delta)
 
         self.inimigo.update(
@@ -48,13 +43,7 @@ class Sala2(SalaBase):
         player.draw(screen, pos_x, pos_y)
         self.inimigo.draw(screen, camera_x)
 
-    
-
-    def checar_colisao_balas(self, player_hitbox: pygame.Rect,
-                              camera_x: float,
-                              damage_sfx=None,
-                              volume_sfx: float = 1.0) -> bool:
-        """Retorna True se alguma bala acertou o player (e a remove)."""
+    def checar_colisao_balas(self, player_hitbox: pygame.Rect, camera_x: float, damage_sfx=None, volume_sfx: float = 1.0):
         acertou = False
         for bullet in self.inimigo.bullets:
             if bullet.vivo and player_hitbox.colliderect(bullet.get_rect(camera_x)):
@@ -66,7 +55,5 @@ class Sala2(SalaBase):
         self.inimigo.bullets = [b for b in self.inimigo.bullets if b.vivo]
         return acertou
 
-    def checar_saida(self, player_x: float, screen: pygame.Surface,
-                     E_gui: pygame.Surface) -> None:
-        """Herdado de SalaBase (saída à esquerda, x < 400)."""
+    def checar_saida(self, player_x: float, screen: pygame.Surface, E_gui: pygame.Surface):
         super().checar_saida(player_x, screen, E_gui)
