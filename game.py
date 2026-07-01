@@ -46,6 +46,7 @@ class Game:
         sons: dict,
     ):
         self.E_gui = E_gui
+        self.font = font
         self.audio = AudioManager(sons)
 
         #Física
@@ -88,6 +89,9 @@ class Game:
         self.pos_x = 0
         self.pos_y = 0
         self.transicao_opacity = 255
+
+        self.timer_morte = 300
+        self.game_over = False
 
     @staticmethod
     def _criar_chao(pos: tuple, largura: int):
@@ -218,6 +222,10 @@ class Game:
             self.player.body.velocity = (self.player.body.velocity.x * 0.7, self.player.body.velocity.y)
 
     def update(self, time_delta: float, volume_sons: float = 1.0, volume_geral: float = 1.0):
+
+        if self.game_over:
+            return
+            
         keys = pygame.key.get_pressed()
 
         if self.state == GameState.FASE1:
@@ -233,6 +241,9 @@ class Game:
 
         if self.transicao_opacity > 0:
             self.transicao_opacity -= 5
+
+        if not self.player.vivo:
+            self.game_over = True
 
     def _update_fase1(self, time_delta, volume_sons, volume_geral, keys):
         self.fase1.update(time_delta, self.player, self.space)
@@ -366,6 +377,19 @@ class Game:
             self.sala1.desenhar_chave(screen, self.sala_geral.sprites["chave"], camera_x)
             self.sala1.checar_saida(self.player.body.position.x, screen, self.E_gui)
 
+        if self.game_over:
+            texto = self.font.render("GAME OVER", True, (255, 0, 0))
+            x = screen.get_width() // 2 - texto.get_width() // 2
+            y = screen.get_height() // 2 - texto.get_height() // 2
+
+            screen.blit(texto, (x, y))
+
+            self.timer_morte -= 1
+
+            if self.timer_morte <= 0:
+                pygame.quit()
+                raise SystemExit
+                 
         return self.pos_x, self.pos_y
 
     def reset(self):
@@ -387,3 +411,6 @@ class Game:
         self._entrou_na_sala1        = False
         self._trocou_para_sala_geral = False
         self.transicao_opacity       = 255
+
+        self.game_over = False
+        self.timer_morte = 300
