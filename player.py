@@ -121,7 +121,8 @@ class Player:
             self.has_tp = False
 
     def levar_dano(self, quantidade: int = 1) -> None:
-        self.life -= quantidade
+        if self.life > 0:
+            self.life -= quantidade
 
 
     def atualizar_animacao(self) -> None:
