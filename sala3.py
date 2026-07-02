@@ -15,8 +15,7 @@ class Sala3(SalaBase):
     _INICIO_SERRAS     = 600
     _SOBRA             = 500
 
-    def __init__(self, superficie: pygame.Surface,
-                 sprite_serra: pygame.Surface) -> None:
+    def __init__(self, superficie: pygame.Surface, sprite_serra: pygame.Surface):
         super().__init__(superficie)
         self.CLAMP_MAX_X = self.largura - 70
         self.sprite_serra = sprite_serra
@@ -26,9 +25,7 @@ class Sala3(SalaBase):
         self.serra_horizontal = SerraHorizontal(
             x_min=1100, x_max=1900, y=540, vel=280)
 
-   
-
-    def _criar_serras_verticais(self) -> list[SerraVertical]:
+    def _criar_serras_verticais(self):
         velocidades = [0.45, 0.55, 0.40, 0.50, 0.60, 0.35]
         fases       = [0.00, 0.30, 0.60, 0.15, 0.45, 0.75]
         limite  = self.largura - self._SOBRA
@@ -47,9 +44,7 @@ class Sala3(SalaBase):
             i += 1
         return serras
 
-    #mesma coisa, usa sala base
-    def update(self, time_delta: float, player, space) -> None:
-        # dash + física + estado do player em um só lugar
+    def update(self, time_delta: float, player, space):
         player.update(space, time_delta)
 
         self.rotacao = (self.rotacao + 4) % 360
@@ -59,9 +54,7 @@ class Sala3(SalaBase):
 
         self.clamp_player(player)
 
-    def draw(self, screen: pygame.Surface, player,
-             camera_x: int, pos_x: int, pos_y: int,
-             time_delta: float = 0) -> None:
+    def draw(self, screen: pygame.Surface, player, camera_x: int, pos_x: int, pos_y: int, time_delta: float = 0):
         screen.fill((0, 0, 0))
         screen.blit(self.superficie, (-camera_x, 10))
 
@@ -74,8 +67,7 @@ class Sala3(SalaBase):
 
     #fisica das serras, colisão com o player
 
-    def checar_colisao(self, player_hitbox: pygame.Rect,
-                        camera_x: float) -> bool:
+    def checar_colisao(self, player_hitbox: pygame.Rect, camera_x: float):
         #retorna se o player colidiu com alguma serra (vertical ou horizontal)
         for serra in self.serras:
             if player_hitbox.colliderect(serra.get_hitbox(camera_x)):
@@ -83,7 +75,6 @@ class Sala3(SalaBase):
         return player_hitbox.colliderect(
             self.serra_horizontal.get_hitbox(camera_x))
 
-    def checar_saida(self, player_x: float, screen: pygame.Surface,
-                     E_gui: pygame.Surface) -> None:
+    def checar_saida(self, player_x: float, screen: pygame.Surface, E_gui: pygame.Surface):
         
         super().checar_saida(player_x, screen, E_gui)

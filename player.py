@@ -20,9 +20,7 @@ class Player:
     WALKING_FRAMES:        int = 2
     WALKING_COOLDOWN_MAX:  int = 20
 
-    def __init__(self, space: pymunk.Space,
-                 animations: dict[str, list[pygame.Surface]],
-                 pos: tuple[float, float] = (250, 430)) -> None:
+    def __init__(self, space: pymunk.Space, animations: dict[str, list[pygame.Surface]], pos: tuple[float, float] = (250, 430)):
 
         # Física
         self.body  = pymunk.Body(1, float("inf"))
@@ -70,12 +68,12 @@ class Player:
     #usa o @property para criar um método que pode ser acessado como um atributo
     #ai pode verificar se o player está vivo com base na quantidade de vida restante
     @property
-    def vivo(self) -> bool:
+    def vivo(self):
         return self.life > 0
 
    #atualiza o estado do player, processa o dash e aplica a física do pymunk
 
-    def update(self, space: pymunk.Space, time_delta: float) -> None:
+    def update(self, space: pymunk.Space, time_delta: float):
         
         self._atualizar_estado()
         if self.dashing:
@@ -96,7 +94,7 @@ class Player:
                 self.atacando = False
                 self.hitbox_ataque = None
 
-    def _atualizar_estado(self) -> None:
+    def _atualizar_estado(self):
         
         vx, vy = self.body.velocity
         if vx == 0 and vy == 0:
@@ -104,7 +102,7 @@ class Player:
         elif vy == 0 and vx != 0:
             self.estado = "Walking"
 
-    def _processar_dash(self, time_delta: float) -> None:
+    def _processar_dash(self, time_delta: float):
         
         progresso = pytweening.easeOutQuart(self.dash_t)
         new_x = (self.dash_inicial
@@ -118,11 +116,11 @@ class Player:
 
    #acoes do player
 
-    def pular(self) -> None:
+    def pular(self):
         if self.body.velocity.y == 0:
             self.body.velocity = (self.body.velocity.x, self.VELOCIDADE_PULO)
 
-    def iniciar_dash(self) -> None:
+    def iniciar_dash(self):
         if self.dashing:
             return
         self.dashing      = True
@@ -132,7 +130,7 @@ class Player:
         offset = self.dash_distance if self.virado else -self.dash_distance
         self.dash_final = self.body.position.x + offset
 
-    def usar_teleporte(self) -> None:
+    def usar_teleporte(self):
         if not self.has_tp:
             self.tp_pos = (self.body.position.x, self.body.position.y)
             self.has_tp = True
@@ -163,12 +161,12 @@ class Player:
 
         self.acertou_ataque = False
 
-    def levar_dano(self, quantidade: int = 1) -> None:
+    def levar_dano(self, quantidade: int = 1):
         if self.life > 0:
             self.life -= quantidade
 
 
-    def atualizar_animacao(self) -> None:
+    def atualizar_animacao(self):
         self.idle_cooldown += 1
         if self.idle_cooldown >= self.IDLE_COOLDOWN_MAX:
             self.idle_cooldown = 0
@@ -186,7 +184,7 @@ class Player:
 
   
     def draw(self, screen: pygame.Surface, pos_x: int, pos_y: int,
-             efeitos_fase1: bool = False) -> None:
+             efeitos_fase1: bool = False):
         imagem = self.image
 
         if self.dashing:
@@ -228,9 +226,7 @@ class Player:
         if efeitos_fase1:
             self._desenhar_efeitos_fase1(screen, imagem, pos_x, pos_y)
 
-    def _desenhar_efeitos_fase1(self, screen: pygame.Surface,
-                                 imagem: pygame.Surface,
-                                 pos_x: int, pos_y: int) -> None:
+    def _desenhar_efeitos_fase1(self, screen: pygame.Surface, imagem: pygame.Surface, pos_x: int, pos_y: int):
         purple_overlay = imagem.copy()
         purple_overlay.fill("Purple", special_flags=pygame.BLEND_MULT)
         purple_overlay.set_alpha(40)
