@@ -46,6 +46,7 @@ class Game:
         sons: dict,
     ):
         self.E_gui = E_gui
+        self.font = font
         self.audio = AudioManager(sons)
 
         #Física
@@ -84,6 +85,7 @@ class Game:
         self._entrou_na_sala3      = False
         self._trocou_para_sala_geral = False
         self.chaves_coletadas = {"sala1": False, "sala2": False, "sala3": False}
+        self.descobriu_porta_chefe = False
 
         self.pos_x = 0
         self.pos_y = 0
@@ -147,6 +149,7 @@ class Game:
         elif s == GameState.SALAGERAL:
             if self.sala_geral.range_porta_saida:
                 self.sala_geral.tentar_porta_saida()
+                self.descobriu_porta_chefe = True
             elif self.sala_geral.tentar_porta3():
                 self._entrar_sala(GameState.SALA3)
                 self.sala_geral.range_porta3 = False
@@ -354,7 +357,7 @@ class Game:
             px, py = self.sala_geral.draw(screen, self.player, click_sfx=click_sfx, volume_sfx=click_sfx_volume)
             if px is not None:
                 self.pos_x, self.pos_y = px, py
-
+            
         elif self.state == GameState.SALA3:
             camera_x = self.sala3.calcular_camera(self.player.body.position.x)
             self.pos_x, self.pos_y = self.sala3.calcular_pos_player(self.player.body.position.x, self.player.body.position.y, camera_x)
@@ -388,6 +391,16 @@ class Game:
             if self.timer_morte <= 0:
                 pygame.quit()
                 raise SystemExit
+        
+        #contador de chaves coletadas
+        if self.state != GameState.FASE1 and getattr(self, 'descobriu_porta_chefe', False):
+            qtd_chaves = sum(self.chaves_coletadas.values())
+            texto_contador = f"{qtd_chaves}/3"
+            fonte_contador = pygame.font.Font("fonts/pixy.ttf", 40)
+            #cor
+            imagem_texto = fonte_contador.render(texto_contador, True, (255, 255, 255)) 
+            #tamanho
+            screen.blit(imagem_texto, (1150, 650))
                  
         return self.pos_x, self.pos_y
 
@@ -413,3 +426,4 @@ class Game:
 
         self.game_over = False
         self.timer_morte = 300
+        self.descobriu_porta_chefe = False
