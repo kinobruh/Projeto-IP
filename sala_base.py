@@ -63,6 +63,13 @@ class SalaBase(ABC):
         y = max(0, min(player.body.position.y, self.ALTURA_TELA))
         player.body.position = (x, y)
 
+    def checar_ataque_player(self, player, inimigo) -> None:
+        if (player.atacando and player.hitbox_ataque and inimigo.vivo and not player.acertou_ataque):
+            
+            if player.hitbox_ataque.colliderect(inimigo.get_rect()):
+                inimigo.levar_dano()
+                player.acertou_ataque = True
+
     def checar_saida(self, player_x: float, screen: pygame.Surface,
                      E_gui: pygame.Surface) -> None:
         if player_x < 400:
