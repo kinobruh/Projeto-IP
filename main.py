@@ -56,7 +56,11 @@ def saturar(surface, fator):
 #endregion
 
 #region Paths
-BASE_DIR = Path(__file__).parent
+if getattr(sys, "frozen", False):
+    # Rodando como .exe empacotado (PyInstaller) — assets ficam extraidos em sys._MEIPASS
+    BASE_DIR = Path(sys._MEIPASS)
+else:
+    BASE_DIR = Path(__file__).parent
 MAPS = BASE_DIR / "maps"
 SPRITES = BASE_DIR / "sprites"
 GUI = BASE_DIR / "gui"
@@ -185,6 +189,7 @@ damage_sfx = pygame.mixer.Sound(SFX / "damage.mp3")
 open_door_sfx = pygame.mixer.Sound(SFX / "open_door.mp3")
 dash_sfx1 = pygame.mixer.Sound(SFX / "dash3.mp3")
 dash_sfx2 = pygame.mixer.Sound(SFX / "dash.mp3")
+heal_sfx = pygame.mixer.Sound(SFX / "hpup.mp3")
 #endregion
 
 #endregion
@@ -364,7 +369,16 @@ game_sons = {
     "click":     click_sfx,
     "dash1":     dash_sfx1,
     "dash2":     dash_sfx2,
+    "heal":      heal_sfx
 }
+
+fonte_contador = pygame.font.Font(FONTS / "PIXY.ttf", 40)
+life_bar_sprites = {
+    "life_bar_3": life_bar_3_3,
+    "life_bar_2": life_bar_2_3,
+    "life_bar_1": life_bar_1_3,
+}
+game_over_sprite = pygame.image.load(SPRITES / "game over.png").convert_alpha()
 
 game = Game(
     animations,
@@ -375,6 +389,9 @@ game = Game(
     font,
     E_gui,
     game_sons,
+    fonte_contador,
+    life_bar_sprites,
+    game_over_sprite,
 )
 #endregion
 
@@ -593,6 +610,10 @@ while run_game:
         #endregion
 
         game.update(time_delta, Volume_Sons, Volume_Geral)
+
+        if game.fechar:
+            run_game = False
+            continue
 
         if game.consumir_trocou_para_sala_geral():
             pygame.mixer.music.load(missao_music)

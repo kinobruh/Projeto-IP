@@ -1,16 +1,12 @@
 from __future__ import annotations
 import pygame
 
-
 class Spritesheet:
    
-
-    def __init__(self, image: pygame.Surface) -> None:
+    def __init__(self, image: pygame.Surface):
         self.sheet = image.convert_alpha()
 
-    def get_image(self, frame: int, row: int, width: int, height: int,
-                  scale: float, color: tuple) -> pygame.Surface:
-        #Extrai um único frame.
+    def get_image(self, frame: int, row: int, width: int, height: int, scale: float, color: tuple):
         image = pygame.Surface((width, height), pygame.SRCALPHA)
         image.blit(self.sheet, (0, 0),
                    (frame * width, row * height, width, height))
@@ -19,11 +15,5 @@ class Spritesheet:
         image.set_colorkey(color)
         return image
 
-    def get_animation(self, row: int, num_frames: int, width: int,
-                      height: int, scale: float,
-                      color: tuple) -> list[pygame.Surface]:
-        
-        return [
-            self.get_image(frame, row, width, height, scale, color)
-            for frame in range(num_frames)
-        ]
+    def get_animation(self, row: int, num_frames: int, width: int, height: int, scale: float,color: tuple):
+        return [self.get_image(frame, row, width, height, scale, color) for frame in range(num_frames)]

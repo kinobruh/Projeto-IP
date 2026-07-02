@@ -33,7 +33,6 @@ class Bullet:
     def draw(self, screen: pygame.Surface, camera_x: float = 0):
         screen.blit(self.sprite, self.get_rect(camera_x).topleft)
 
-
 class Enemy:
     #inimigo que atira e flutua
 
@@ -116,14 +115,13 @@ class Enemy:
             if abs(b.x - self.x) < self.alcance_visao + 400
         ]
 
-    def _ve_o_player(self, player_x: float, player_y: float):
+    def ve_player(self, player_x: float, player_y: float):
         dist_y = abs(player_y - self.y)
         if dist_y > self.tolerancia_y:
             return False
         return abs(player_x - self.x) <= self.alcance_visao
 
-    def _reagir_ao_player(self, time_delta: float, player_x: float,
-                           sfx_tiro, volume_sfx: float) -> None:
+    def reagir_ao_player(self, time_delta: float, player_x: float, sfx_tiro, volume_sfx: float):
         self.virado = player_x > self.x
         if self.estado == "patrulhando":
             self.estado       = "atirando"
@@ -137,7 +135,7 @@ class Enemy:
                     self.tiro_timer = 0.0
                     self._disparar(sfx_tiro, volume_sfx)
 
-    def _patrulhar(self, time_delta: float) -> None:
+    def patrulhar(self, time_delta: float):
         self.x += self.velocidade_patrulha * self.direcao_patrulha * time_delta
         if self.x >= self.patrulha_max:
             self.x = self.patrulha_max
@@ -148,7 +146,7 @@ class Enemy:
             self.direcao_patrulha = 1
             self.virado = True
 
-    def _atualizar_flutuacao(self, time_delta: float) -> None:
+    def flutuar(self, time_delta: float):
         if self.em_recoil:
             return
         self.flutuacao_t += time_delta * self.velocidade_flutuacao
@@ -158,7 +156,7 @@ class Enemy:
                      else pytweening.easeInOutSine(2.0 - ciclo))
         self.flutuacao_offset = (progresso - 0.5) * 2 * self.amplitude_flutuacao
 
-    def _atualizar_recoil(self, time_delta: float) -> None:
+    def recoil(self, time_delta: float):
         if not self.em_recoil:
             self.recoil_offset = 0.0
             return
@@ -179,7 +177,7 @@ class Enemy:
             self.recoil_t     = 0.0
             self.recoil_offset = 0.0
 
-    def _disparar(self, sfx_tiro, volume_sfx: float) -> None:
+    def atirar(self, sfx_tiro, volume_sfx: float):
         direcao  = 1 if self.virado else -1
         origem_x = self.x + self.recoil_offset
         origem_y = self.y - self.altura_flutuacao + self.flutuacao_offset
@@ -195,12 +193,12 @@ class Enemy:
         self.recoil_t  = 0.0
 
 
-    def levar_dano(self, quantidade: int = 1) -> None:
+    def levar_dano(self, quantidade: int = 1):
         self.life -= quantidade
         if self.life <= 0:
             self.vivo = False
 
-    def get_rect(self, camera_x: float = 0) -> pygame.Rect:
+    def get_rect(self, camera_x: float = 0):
         return pygame.Rect(
             self.x - camera_x - self.LARGURA // 2,
             self.y - self.altura_flutuacao - self.ALTURA,
@@ -208,7 +206,7 @@ class Enemy:
             self.ALTURA,
         )
 
-    def get_visual_rect(self, camera_x: float = 0) -> pygame.Rect:
+    def get_rect_2(self, camera_x: float = 0):
         desenho_x = self.x + self.recoil_offset
         desenho_y = self.y - self.altura_flutuacao + self.flutuacao_offset
         return pygame.Rect(
@@ -218,10 +216,10 @@ class Enemy:
             self.ALTURA,
         )
 
-    def draw(self, screen: pygame.Surface, camera_x: float = 0) -> None:
+    def draw(self, screen: pygame.Surface, camera_x: float = 0):
         if not self.vivo:
             return
-        rect   = self.get_visual_rect(camera_x)
+        rect   = self.get_rect_2(camera_x)
         imagem = self.sprite_original
         if self.virado:
             imagem = pygame.transform.flip(imagem, True, False)

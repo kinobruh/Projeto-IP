@@ -10,7 +10,7 @@ class Sala2(SalaBase):
 
     CLAMP_MIN_X = 190
 
-    def __init__(self, superficie: pygame.Surface, enemy_sprite: pygame.Surface, bullet_sprite: pygame.Surface | None = None) -> None:
+    def __init__(self, superficie: pygame.Surface, enemy_sprite: pygame.Surface, bullet_sprite: pygame.Surface | None = None):
         super().__init__(superficie)
         self.CLAMP_MAX_X = self.largura - 70
 
@@ -40,9 +40,7 @@ class Sala2(SalaBase):
         
         self.clamp_player(player)
 
-    def draw(self, screen: pygame.Surface, player,
-             camera_x: int, pos_x: int, pos_y: int,
-             time_delta: float = 0) -> None:
+    def draw(self, screen: pygame.Surface, player, camera_x: int, pos_x: int, pos_y: int, time_delta: float = 0):
         screen.fill((0, 0, 0))
         screen.blit(self.superficie, (-camera_x, 10))
         player.draw(screen, pos_x, pos_y)
@@ -73,21 +71,8 @@ class Sala2(SalaBase):
 
         if self.pegou_vida:
             return False
-
-        player_rect = pygame.Rect(
-            player.body.position.x - 45,
-            player.body.position.y - 120,
-            90,
-            200
-        )
-
-        vida_rect = pygame.Rect(
-            self.vida_pos[0],
-            self.vida_pos[1],
-            80,
-            80
-        )
-
+        player_rect = pygame.Rect(player.body.position.x - 45, player.body.position.y - 120, 90, 200)
+        vida_rect = pygame.Rect(self.vida_pos[0], self.vida_pos[1], 80, 80)
         if player_rect.colliderect(vida_rect):
             self.pegou_vida = True
             return True

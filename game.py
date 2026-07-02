@@ -44,9 +44,15 @@ class Game:
         font: pygame.font.Font,
         E_gui: pygame.Surface,
         sons: dict,
+        fonte_contador: pygame.font.Font,
+        life_bar_sprites: dict,
+        game_over_sprite: pygame.Surface,
     ):
         self.E_gui = E_gui
         self.font = font
+        self.fonte_contador = fonte_contador
+        self.life_bar_sprites = life_bar_sprites
+        self.game_over_sprite = game_over_sprite
         self.audio = AudioManager(sons)
 
         #Física
@@ -69,8 +75,7 @@ class Game:
 
         #Salas
         self.fase1      = Fase1(fase1_surface, fase1_sprites, font)
-        self.sala_geral = SalaGeral(sala_geral_surface, sala_geral_sprites,
-                                    font)
+        self.sala_geral = SalaGeral(sala_geral_surface, sala_geral_sprites, font)
         self.sala2      = Sala2(sala3_surface, enemy_sprite, bullet_sprite)
         self.sala3      = Sala3(sala3_surface, serra_sprite)
         self.sala1      = Sala1(sala3_surface)
@@ -267,9 +272,17 @@ class Game:
             self.sala_geral.iniciar_cutscene()
             self._trocou_para_sala_geral = True
 
+            qtd_chaves = sum(self.chaves_coletadas.values())
+            self.sala_geral.atualizar_chaves(qtd_chaves)
+
+            self.sala_geral.update(time_delta, self.player, self.space)
+
+        qtd_chaves = sum(self.chaves_coletadas.values())
+        self.sala_geral.atualizar_chaves(qtd_chaves)
+
         self.sala_geral.update(time_delta, self.player, self.space)
 
-        if not self.sala_geral.em_cutscene and not self.sala_geral.em_fala_porta:
+        if not self.sala_geral.em_cutscene and not self.sala_geral.em_fala_porta and not self.sala_geral.finalizando:
             self.player.atualizar_animacao()
             self._mover(keys)
 
@@ -325,6 +338,7 @@ class Game:
             self.player.life -= 1
 
         if self.sala2.checar_coleta_vida(self.player):
+            self.audio.tocar("heal", volume_sons, volume_geral)
             if self.player.life < 3:
                 self.player.life += 1
 
@@ -351,6 +365,22 @@ class Game:
 
         self.player.atualizar_animacao()
         self._mover(keys)
+
+    @property
+    def fechar(self):
+        return self.state == GameState.SALAGERAL and self.sala_geral.deve_fechar
+
+    def _desenhar_vida(self, screen: pygame.Surface):
+        sp = self.life_bar_sprites
+        if not sp:
+            return
+        vida = self.player.life
+        if vida >= 3:
+            screen.blit(sp["life_bar_3"], (20, 20))
+        elif vida == 2:
+            screen.blit(sp["life_bar_2"], (20, 20))
+        elif vida == 1:
+            screen.blit(sp["life_bar_1"], (20, 20))
 
     def draw(self, screen: pygame.Surface,
              click_sfx_volume: float = 1.0):
@@ -387,26 +417,28 @@ class Game:
             self.sala1.desenhar_chave(screen, self.sala_geral.sprites["chave"], camera_x)
             self.sala1.checar_saida(self.player.body.position.x, screen, self.E_gui)
 
-        if self.game_over:
-            texto = self.font.render("GAME OVER", True, (255, 0, 0))
-            x = screen.get_width() // 2 - texto.get_width() // 2
-            y = screen.get_height() // 2 - texto.get_height() // 2
+        em_tela_final = (self.state == GameState.SALAGERAL and self.sala_geral.finalizando)
+        if not em_tela_final:
+            self._desenhar_vida(screen)
 
-            screen.blit(texto, (x, y))
+        if self.game_over:
+            imagem = self.game_over_sprite
+            x = screen.get_width() // 2 - imagem.get_width() // 2
+            y = screen.get_height() // 2 - imagem.get_height() // 2
+            screen.blit(imagem, (x, y))
 
             self.timer_morte -= 1
 
             if self.timer_morte <= 0:
                 pygame.quit()
                 raise SystemExit
-        
+
         #contador de chaves coletadas
         if self.state != GameState.FASE1 and getattr(self, 'descobriu_porta_chefe', False):
             qtd_chaves = sum(self.chaves_coletadas.values())
             texto_contador = f"{qtd_chaves}/3"
-            fonte_contador = pygame.font.Font("fonts/pixy.ttf", 40)
             #cor
-            imagem_texto = fonte_contador.render(texto_contador, True, (255, 255, 255)) 
+            imagem_texto = self.fonte_contador.render(texto_contador, True, (255, 255, 255))
             #tamanho
             screen.blit(imagem_texto, (1150, 650))
                  

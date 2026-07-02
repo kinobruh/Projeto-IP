@@ -114,6 +114,7 @@ class Fase1(SalaBase):
         self._mover_carros()
         self._verificar_porta(player)
         self._verificar_vida(player)
+        self.clamp_player(player)
         if self.fala_tutorial >= len(_FALAS):
             self.tutorial_acabou = True
 
@@ -129,7 +130,6 @@ class Fase1(SalaBase):
             screen.blit(self.sprites["E_gui"], (1190, 275))
         if not self.tutorial_acabou:
             self._desenhar_tutorial(screen)
-        self._desenhar_vida(screen, player)
 
     def _mover_carros(self):
         for c in self._carros:

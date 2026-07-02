@@ -15,6 +15,7 @@ def _criar_textos_sala_geral(font: pygame.font.Font):
         "porta_fala2":    font.render('Parece que voce vai precisar de 3 chaves de acesso', False, "White"),
         "porta_fala2_1":  font.render('pra conseguir abrir a porta.', False, "White"),
         "porta_fala3":    font.render('Vamos checar as outras salas.', False, "White"),
+        "final_texto":    font.render('Voce entra no escritorio e asassina o chefe. Missao concluida.', False, "White"),
     }
 
 class SalaGeral(SalaBase):
@@ -31,6 +32,7 @@ class SalaGeral(SalaBase):
 
     DURACAO_CUTSCENE   = 300
     DURACAO_FALA_PORTA = 300
+    DURACAO_FINAL       = 300
 
     def __init__(self, superficie: pygame.Surface, sprites: dict, font: pygame.font.Font):
         super().__init__(superficie)
@@ -52,20 +54,38 @@ class SalaGeral(SalaBase):
         self.em_fala_porta    = False
         self.timer_fala_porta = self.DURACAO_FALA_PORTA
 
+        self.finalizando = False
+        self.timer_final = self.DURACAO_FINAL
+
     def iniciar_cutscene(self):
         self.em_cutscene             = True
         self.cutscene_x              = 0.0
         self.timer_cutscene          = self.DURACAO_CUTSCENE
         self.timer_cutscene_progress = self.DURACAO_CUTSCENE
 
+    def atualizar_chaves(self, qtd_chaves):
+        self.todas_chaves = (qtd_chaves == 3)
+
+    @property
+    def deve_fechar(self):
+        return self.finalizando and self.timer_final <= 0
+
     def tentar_porta_saida(self):
+        if self.finalizando:
+            return True
+
         if self.range_porta_saida and not self.todas_chaves:
             self.em_fala_porta    = True
             self.checou_porta     = True
             self.timer_fala_porta = self.DURACAO_FALA_PORTA
             return True
+        
+        elif self.range_porta_saida and self.todas_chaves:
+            self.finalizando = True
+            self.timer_final = self.DURACAO_FINAL
+            return True
         return False
-
+    
     def tentar_porta3(self):
         return self.range_porta3 and not self.todas_chaves and self.checou_porta
 
@@ -80,7 +100,7 @@ class SalaGeral(SalaBase):
         self.range_porta_saida = False
         self.range_porta3      = False
         self.range_porta2      = False
-        self.range.porta1      = False
+        self.range_porta1      = False
         self.todas_chaves      = False
         self.checou_porta      = False
         self.em_cutscene             = True
@@ -89,8 +109,14 @@ class SalaGeral(SalaBase):
         self.timer_cutscene_progress = self.DURACAO_CUTSCENE
         self.em_fala_porta    = False
         self.timer_fala_porta = self.DURACAO_FALA_PORTA
+        self.finalizando = False
+        self.timer_final = self.DURACAO_FINAL
 
     def update(self, time_delta: float, player, space):
+        if self.finalizando:
+            self.timer_final -= 1
+            return
+
         if self.em_cutscene:
             self._atualizar_cutscene()
             return
@@ -104,7 +130,15 @@ class SalaGeral(SalaBase):
         self._atualizar_ranges_portas(player.body.position.x)
 
     def draw(self, screen: pygame.Surface, player, camera_x: int = 0, pos_x: int = 0, pos_y: int = 0, click_sfx=None, volume_sfx: float = 1.0):
-    
+
+        if self.finalizando:
+            screen.fill("BLACK")
+            texto = self.textos["final_texto"]
+            x = self.LARGURA_TELA // 2 - texto.get_width() // 2
+            y = self.ALTURA_TELA  // 2 - texto.get_height() // 2
+            screen.blit(texto, (x, y))
+            return None, None
+
         if self.em_cutscene:
             self._desenhar_cutscene(screen, click_sfx, volume_sfx)
             return None, None

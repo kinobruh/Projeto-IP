@@ -8,7 +8,6 @@
 from __future__ import annotations
 import pygame
 
-
 # Volume base de cada SFX (0.0 – 1.0).
 # Ajuste aqui para balancear sem tocar em nenhuma sala.
 _VOLUMES_BASE: dict[str, float] = {
@@ -22,15 +21,12 @@ _VOLUMES_BASE: dict[str, float] = {
     "press":     0.35,
 }
 
-
 class AudioManager:
     #Gerencia SFX com volume relativo ao master e ao canal de sons.
-
-    def __init__(self, sons: dict[str, pygame.mixer.Sound]) -> None:
+    def __init__(self, sons: dict[str, pygame.mixer.Sound]):
         self._sons = sons
 
-    def tocar(self, nome: str, volume_sons: float = 1.0,
-              volume_geral: float = 1.0) -> None:
+    def tocar(self, nome: str, volume_sons: float = 1.0, volume_geral: float = 1.0):
         #reproduz um SFX com volume = base * volume_sons * volume_geral.
         sfx = self._sons.get(nome)
         if sfx is None:
@@ -39,12 +35,10 @@ class AudioManager:
         sfx.set_volume(base * volume_sons * volume_geral)
         sfx.play()
 
-    def tocar_sfx_direto(self, sfx: pygame.mixer.Sound, nome: str,
-                          volume_sons: float = 1.0,
-                          volume_geral: float = 1.0) -> None:
+    def tocar_sfx_direto(self, sfx: pygame.mixer.Sound, nome: str, volume_sons: float = 1.0, volume_geral: float = 1.0):
         #reproduz um objeto Sound avulso usando o volume base pelo nome.
         sfx.set_volume(base * volume_sons * volume_geral)
         sfx.play()
 
-    def get(self, nome: str) -> pygame.mixer.Sound | None:
+    def get(self, nome: str):
         return self._sons.get(nome)
