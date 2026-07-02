@@ -98,15 +98,15 @@ class Enemy:
         if not self.vivo:
             return
 
-        if self._ve_o_player(player_x, player_y):
-            self._reagir_ao_player(time_delta, player_x, sfx_tiro, volume_sfx)
+        if self.ve_player(player_x, player_y):
+            self.reagir_ao_player(time_delta, player_x, sfx_tiro, volume_sfx)
         else:
             if self.estado == "atirando":
                 self.estado = "patrulhando"
-            self._patrulhar(time_delta)
+            self.patrulhar(time_delta)
 
-        self._atualizar_flutuacao(time_delta)
-        self._atualizar_recoil(time_delta)
+        self.flutuar(time_delta)
+        self.recoil(time_delta)
 
         for bullet in self.bullets:
             bullet.update(time_delta)
@@ -133,7 +133,7 @@ class Enemy:
                 self.tiro_timer += time_delta
                 if self.tiro_timer >= self.cooldown_tiro:
                     self.tiro_timer = 0.0
-                    self._disparar(sfx_tiro, volume_sfx)
+                    self.atirar(sfx_tiro, volume_sfx)
 
     def patrulhar(self, time_delta: float):
         self.x += self.velocidade_patrulha * self.direcao_patrulha * time_delta
