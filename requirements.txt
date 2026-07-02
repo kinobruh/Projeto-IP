@@ -1,0 +1,9 @@
+pygame-ce
+pygame-gui
+pyscroll
+pytmx
+pymunk
+pyganim
+PyTweening
+
+#instala tudo de uma vez, só precisa de "pip install -r requirements.txt"
