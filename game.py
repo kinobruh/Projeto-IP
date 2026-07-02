@@ -324,6 +324,10 @@ class Game:
         if self.sala2.checar_colisao_balas(player_hitbox, camera_x, damage_sfx, vol_damage):
             self.player.life -= 1
 
+        if self.sala2.checar_coleta_vida(self.player):
+            if self.player.life < 3:
+                self.player.life += 1
+
         self.player.atualizar_animacao()
         self._mover(keys)
 
@@ -373,6 +377,7 @@ class Game:
             self.pos_x, self.pos_y = self.sala2.calcular_pos_player(self.player.body.position.x, self.player.body.position.y, camera_x)
             self.sala2.draw(screen, self.player, camera_x, self.pos_x, self.pos_y, 0)
             self.sala2.desenhar_chave(screen, self.sala_geral.sprites["chave"], camera_x)
+            self.sala2.desenhar_vida(screen, self.sala_geral.sprites["vida"], camera_x)
             self.sala2.checar_saida(self.player.body.position.x, screen, self.E_gui)
 
         elif self.state == GameState.SALA1:
