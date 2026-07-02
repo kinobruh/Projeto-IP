@@ -94,3 +94,6 @@ class Sala2(SalaBase):
 
         return False
 
+    def reset(self):
+        super().reset()
+        self.pegou_vida = False
