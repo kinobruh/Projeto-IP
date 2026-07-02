@@ -44,6 +44,12 @@ class Player:
         self.life   = 3
         self.estado = "Idle"
         self.image  = self.animations["Idle"][0]
+        self.atacando = False
+        self.tempo_ataque = 0
+        self.duracao_ataque = 0.2
+        self.acertou_ataque = False
+        
+        self.hitbox_ataque = None
 
         # Dash
         self.dashing       = False
@@ -76,6 +82,20 @@ class Player:
             self._processar_dash(time_delta)
         space.step(1 / 60)
 
+        if self.atacando:
+            largura = self.hitbox_ataque.width
+            if self.virado:
+                 self.hitbox_ataque.x = self.body.position.x + 40
+            else:
+                 self.hitbox_ataque.x = self.body.position.x - largura - 40
+            self.hitbox_ataque.y = self.body.position.y - 120
+            
+            self.tempo_ataque -= time_delta
+
+            if self.tempo_ataque <= 0:
+                self.atacando = False
+                self.hitbox_ataque = None
+
     def _atualizar_estado(self) -> None:
         
         vx, vy = self.body.velocity
@@ -96,7 +116,7 @@ class Player:
             self.dash_t  = 1.0
             self.dashing = False
 
-   #acoees do player
+   #acoes do player
 
     def pular(self) -> None:
         if self.body.velocity.y == 0:
@@ -119,6 +139,29 @@ class Player:
         else:
             self.body.position = self.tp_pos
             self.has_tp = False
+    
+    def atacar(self):
+        
+        if self.atacando:
+            return
+        
+        self.atacando = True
+        self.tempo_ataque = self.duracao_ataque
+        
+        largura = 80
+        altura = 120
+        
+        if self.virado:
+            x = self.body.position.x + 40
+        
+        else:
+            x = self.body.position.x - largura - 40
+
+        y = self.body.position.y - 120
+
+        self.hitbox_ataque = pygame.Rect(x, y, largura, altura)
+
+        self.acertou_ataque = False
 
     def levar_dano(self, quantidade: int = 1) -> None:
         if self.life > 0:
@@ -168,6 +211,19 @@ class Player:
             print(self.body.position.x)
 
         screen.blit(imagem, (pos_x, pos_y))
+
+        if self.hitbox_ataque:
+            largura = self.hitbox_ataque.width
+            altura = self.hitbox_ataque.height
+            
+            if self.virado:
+                x = pos_x + 120
+            else:
+                x = pos_x - largura + 20
+
+            y = pos_y + 110
+
+            pygame.draw.rect(screen, "red", (x, y, largura, altura), 2)
 
         if efeitos_fase1:
             self._desenhar_efeitos_fase1(screen, imagem, pos_x, pos_y)
