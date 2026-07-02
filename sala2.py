@@ -33,6 +33,8 @@ class Sala2(SalaBase):
             volume_sfx=volume_sfx,
         )
 
+        self.checar_ataque_player(player, self.inimigo)
+        
         self.clamp_player(player)
 
     def draw(self, screen: pygame.Surface, player,
