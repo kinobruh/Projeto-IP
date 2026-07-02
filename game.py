@@ -47,6 +47,7 @@ class Game:
         fonte_contador: pygame.font.Font,
         life_bar_sprites: dict,
         game_over_sprite: pygame.Surface,
+        raio_sprite: pygame.Surface,
     ):
         self.E_gui = E_gui
         self.font = font
@@ -78,7 +79,7 @@ class Game:
         self.sala_geral = SalaGeral(sala_geral_surface, sala_geral_sprites, font)
         self.sala2      = Sala2(sala3_surface, enemy_sprite, bullet_sprite)
         self.sala3      = Sala3(sala3_surface, serra_sprite)
-        self.sala1      = Sala1(sala3_surface)
+        self.sala1      = Sala1(sala3_surface, raio_sprite)
 
         #Estado
         self.state   = GameState.FASE1
@@ -221,12 +222,18 @@ class Game:
         self.player.virado    = True
         self.transicao_opacity = 255
 
-    def _mover(self, keys):
+    def _mover(self, keys): 
+        mult = 1.0 
+        if getattr(self.player, 'booster_ativo', False):
+            mult = 3.0
+
         if keys[pygame.K_d]:
-            self.player.body.velocity = (self.player.VELOCIDADE_DIREITA, self.player.body.velocity.y)
+
+            self.player.body.velocity = (self.player.VELOCIDADE_DIREITA * mult, self.player.body.velocity.y)
             self.player.virado = True
         if keys[pygame.K_a]:
-            self.player.body.velocity = (-self.player.VELOCIDADE_ESQUERDA, self.player.body.velocity.y)
+            
+            self.player.body.velocity = (-self.player.VELOCIDADE_ESQUERDA * mult, self.player.body.velocity.y)
             self.player.virado = False
         else:
             self.player.body.velocity = (self.player.body.velocity.x * 0.7, self.player.body.velocity.y)

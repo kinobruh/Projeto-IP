@@ -65,6 +65,10 @@ class Player:
         # Efeito visual (fase 1)
         self.shadow_opacity = 0
 
+        #coletavel de velocidade
+        self.booster_ativo = False
+        self.booster_timer = 0.0
+
     #usa o @property para criar um método que pode ser acessado como um atributo
     #ai pode verificar se o player está vivo com base na quantidade de vida restante
     @property
@@ -74,6 +78,11 @@ class Player:
    #atualiza o estado do player, processa o dash e aplica a física do pymunk
 
     def update(self, space: pymunk.Space, time_delta: float):
+
+        if self.booster_ativo:
+            self.booster_timer -= time_delta
+            if self.booster_timer <= 0:
+                self.booster_ativo = False
         
         self._atualizar_estado()
         if self.dashing:

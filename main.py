@@ -107,6 +107,9 @@ class GameState(Enum):
 
 #region Sprites
 
+#raio
+raio_sprite = pygame.image.load(SPRITES / "raio.png").convert_alpha()
+
 #chave
 chave_sprite = pygame.image.load(SPRITES / "chave.png").convert_alpha()
 chave_sprite = pygame.transform.scale(chave_sprite, (105, 105))
@@ -392,6 +395,7 @@ game = Game(
     fonte_contador,
     life_bar_sprites,
     game_over_sprite,
+    raio_sprite,
 )
 #endregion
 
