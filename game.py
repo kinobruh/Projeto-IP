@@ -139,6 +139,9 @@ class Game:
 
         elif k == pygame.K_e:
             self._handle_tecla_e(volume_sons, volume_geral)
+        
+        elif k == pygame.K_j:
+            self.player.atacar()
 
     def _handle_tecla_e(self, volume_sons: float, volume_geral: float):
         s = self.state
