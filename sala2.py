@@ -22,6 +22,9 @@ class Sala2(SalaBase):
             bullet_sprite=bullet_sprite,
         )
 
+        self.vida_pos = (1500, 340)
+        self.pegou_vida = False
+
     def update(self, time_delta: float, player, space, shoot_sfx=None, volume_sfx: float = 1.0):
         player.update(space, time_delta)
 
@@ -59,3 +62,35 @@ class Sala2(SalaBase):
 
     def checar_saida(self, player_x: float, screen: pygame.Surface, E_gui: pygame.Surface):
         super().checar_saida(player_x, screen, E_gui)
+
+    def desenhar_vida(self, screen, sprite_vida, camera_x):
+        if not self.pegou_vida:
+            x = self.vida_pos[0] - camera_x
+            y = self.vida_pos[1]
+            screen.blit(sprite_vida, (x, y))
+
+    def checar_coleta_vida(self, player):
+
+        if self.pegou_vida:
+            return False
+
+        player_rect = pygame.Rect(
+            player.body.position.x - 45,
+            player.body.position.y - 120,
+            90,
+            200
+        )
+
+        vida_rect = pygame.Rect(
+            self.vida_pos[0],
+            self.vida_pos[1],
+            80,
+            80
+        )
+
+        if player_rect.colliderect(vida_rect):
+            self.pegou_vida = True
+            return True
+
+        return False
+
